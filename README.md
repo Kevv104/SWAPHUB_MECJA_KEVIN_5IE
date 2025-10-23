@@ -4,7 +4,7 @@
 
 **SWAPHUB**
 
-**"Swap together!"**
+**"Swap together: help the environment!"**
 
 SwapHUB è una piattaforma di marketplace, focalizzandosi sull'importante valore degli oggetti che possediamo.
 Invece di vendere e acquistare prodotti, gli utenti possono scambiare questi ultimi tra di loro, attraverso un
