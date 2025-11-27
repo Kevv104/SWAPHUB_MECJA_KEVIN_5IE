@@ -20,3 +20,5 @@ con un altro, risparmiando denaro e ottenendo una cosa in cambio che desidera.
 in cui si vendono i prodotti e si comprano
 
 **Tecnologie**: HTML, Bootstrap, CSS, JS, PHP, MYSQL
+
+**Link mockup Lovable**: https://swap-hub-exchange.lovable.app
