@@ -1,24 +1,42 @@
-# SWAPHUB_MECJA_KEVIN_5IE
+# ♻️ SWAPHUB
 
-**Progetto di Mecja Kevin**
+*"Swap together: help the environment!"*
 
-**SWAPHUB**
+SwapHUB è una piattaforma di **marketplace basata sul baratto digitale**, che valorizza gli oggetti che già possediamo. Gli utenti non comprano né vendono prodotti, ma **li scambiano tra loro**, promuovendo il **riutilizzo** e la **sostenibilità ambientale**.
 
-**"Swap together: help the environment!"**
+Oltre all’aspetto ecologico, SwapHUB valorizza anche la **comunità**, permettendo la creazione di **gruppi di scambio** e facilitando baratti tra amici o conoscenti.
 
-SwapHUB è una piattaforma di marketplace, focalizzandosi sull'importante valore degli oggetti che possediamo.
-Invece di vendere e acquistare prodotti, gli utenti possono scambiare questi ultimi tra di loro, attraverso un
-sistema di baratto digitale, con l'obiettivo di favorire principalmente il riutilizzo e la sostenibilità ambientale.
+---
 
-Oltre alla cura dell' ambiente, l' applicazione pone importanza anche sull' aspetto di comunità, permettendo la 
-creazione di gruppi di scambio e la possibilità di baratto tra amici e conoscenti specifici.
+## 🌟 Obiettivi principali
+- Promuovere il **riutilizzo degli oggetti** e ridurre gli sprechi  
+- Favorire la **creazione di comunità** basate sullo scambio  
+- Offrire una **soluzione digitale semplice e intuitiva** per il baratto tra utenti  
 
-**Target**: Qualsiasi persona che ha prodotti che non utilizza più o che vorrebbe semplicemente scambiare un qualcosa
-con un altro, risparmiando denaro e ottenendo una cosa in cambio che desidera.
+---
 
-**Competitors**: Swapush(app di baratto), XTRIBE(app che contiene il baratto),i vari marketplace 
-in cui si vendono i prodotti e si comprano
+## 🎯 Target
+Persone che:  
+- Hanno oggetti **non più utilizzati**  
+- Vogliono **scambiare qualcosa** invece di acquistarlo  
+- Vogliono risparmiare denaro ottenendo ciò che desiderano tramite il baratto  
 
-**Tecnologie**: HTML, Bootstrap, CSS, JS, PHP, MYSQL
+---
 
-**Link mockup Lovable**: https://swap-hub-exchange.lovable.app
+## 🏆 Competitors
+- **Swapush** – app di baratto  
+- **XTRIBE** – piattaforma con funzionalità di baratto  
+- Marketplace tradizionali di vendita e acquisto  
+
+---
+
+## 💻 Tecnologie utilizzate
+- **Frontend:** HTML, CSS, Bootstrap, JavaScript  
+- **Backend:** PHP  
+- **Database:** MySQL  
+
+---
+
+## 🎨 Mockup
+Visualizza il mockup interattivo qui:  
+[🔗 SwapHUB su Lovable](https://swap-hub-exchange.lovable.app)
