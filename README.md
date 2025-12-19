@@ -40,3 +40,9 @@ Persone che:
 ## 🎨 Mockup
 Visualizza il mockup interattivo qui:  
 [🔗 SwapHUB su Lovable](https://swap-hub-exchange.lovable.app)
+
+---
+
+## ⚙️ Requisiti funzionali/non funzionali
+Puoi trovare il link al docs aggiornato qui:
+[🔗 User Stories & Requisiti – SwapHUB](https://docs.google.com/document/d/1amjiThMNhSfNnUfBlpj_LSWPyXehnYZcHfSiJARW_Jo/edit?usp=sharing)
