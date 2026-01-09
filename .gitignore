@@ -1,0 +1,7 @@
+
+LOGIN_DATABASE/config.php
+LOGIN_DATABASE/connectdb.php
+
+
+.env
+*.log
