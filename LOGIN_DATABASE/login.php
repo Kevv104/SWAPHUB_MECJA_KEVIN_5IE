@@ -1,56 +1,90 @@
-<?php 
- session_start();
- require_once 'connectdb.php'; //config db
- require_once 'config.php'; //importazione del pepper contenuto nel file config.php
- if($_SERVER["REQUEST_METHOD"] === "POST") 
- {
-  $username = trim($_POST["username"]);
-  $password = trim($_POST["password"]);
+<?php
+session_start();
+require_once 'connectdb.php'; //config db
+require_once 'config.php'; //importazione del pepper contenuto nel file config.php
 
-  if(empty($username) || empty($password)) //verifica dei campi vuoti
-  {
-   header("Location:index.php?errore=Compila");
-   exit();
-  }
+if($_SERVER["REQUEST_METHOD"] === "POST") 
+{
+    $username = trim($_POST["username"]);
+    $password = trim($_POST["password"]);
 
-  $statoq = $connessione->prepare("SELECT password, salt, role, bgcolor FROM utenti WHERE username = ?");
-
-  if(!$statoq) //se è null
-  {
-    die("Errore: " . $connessione->error);
-  }
-
-  $statoq->bind_param("s",$username);
-  $statoq->execute();
-  $statoq->store_result();
-
-  if($statoq->num_rows == 1) //se l'utente esiste
-  {
-    $statoq->bind_result($db_password,$dbsalt,$role,$bgcolor);
-    $statoq->fetch();
-
-    $inputhash = hash('sha256', $password . $dbsalt . PEPPER);
-    
-     if($inputhash === $db_password)  //coincide password
-     {
-        $_SESSION['name'] = $username; //salvataggio nome inserito
-        $_SESSION['color'] = "#" . $bgcolor; //serve per definire il colore in hex
-        $_SESSION['role'] = $role; //salvataggio ruolo
-
-        $statoq->close();
-        header("Location:visualizzaUtente.php");
+    if(empty($username) || empty($password)) //verifica dei campi vuoti
+    {
+        header("Location:index.php?errore=Compila");
         exit();
-     } 
-  }
-   
-   $statoq->close(); 
-   header("Location:index.php?errore=Credenziali di accesso errate!"); //se le credenziali non sono corrette o presenti nel db, allora errore
-   exit();
+    }
+
+    // Prelevo dati utente
+    $statoq = $connessione->prepare("SELECT password, salt, bgcolor FROM utenti WHERE username = ?");
+    $statoq->bind_param("s", $username);
+    $statoq->execute();
+    $statoq->store_result();
+
+    if($statoq->num_rows == 1) //se l'utente esiste
+    {
+        $statoq->bind_result($db_password, $dbsalt, $bgcolor);
+        $statoq->fetch();
+
+        $inputhash = hash('sha256', $password . $dbsalt . PEPPER);
+
+        if($inputhash === $db_password) //coincide password
+        {
+            $statoq->close();
+
+            // Prelevo ruoli dell'utente
+            $statoq = $connessione->prepare("SELECT idRuolo FROM UtenteRuolo WHERE username = ?");
+            $statoq->bind_param("s", $username);
+            $statoq->execute();
+            $result = $statoq->get_result();
+            $ruoli = [];
+            while($row = $result->fetch_assoc()) {
+                $ruoli[] = $row['idRuolo'];
+            }
+            $statoq->close();
+
+            // Prelevo permessi associati ai ruoli
+            $permessi = [];
+            if(!empty($ruoli)) {
+                $ids = implode(',', array_map('intval', $ruoli));
+                $query = "SELECT DISTINCT p.nomePermesso
+                          FROM Permesso p
+                          JOIN RuoloPermesso rp ON rp.idPermesso = p.idPermesso
+                          WHERE rp.idRuolo IN ($ids)";
+                $result = $connessione->query($query);
+                while($row = $result->fetch_assoc()) {
+                    $permessi[] = $row['nomePermesso'];
+                }
+            }
+
+            // Imposto sessione
+            $_SESSION['name'] = $username;
+            $_SESSION['color'] = "#" . $bgcolor;
+            $_SESSION['ruoli'] = $ruoli;
+            $_SESSION['permessi'] = $permessi;
+
+            $payload =  //payload jwt
+            [
+                'iss' => 'swaphub',
+                'iat' => time(),
+                'exp' => time() + JWT_TTL,
+                'sub' => $username,
+                'ruoli' => $ruoli,
+                'permessi' => $permessi
 
 
-   header("Location: index.php"); //per evitare accessi diretti a index.php senza inserire nulla
-   exit();
+            ];
 
+            $jwt = JWT::encode($payload, JWT_SECRET, JWT_ALGO); //crea il jwt alla login
 
+            $_SESSION['jwt'] = $jwt; //salvataggio del token in session
+
+            header("Location: visualizzaUtente.php");
+            exit();
+        }
+    }
+
+    $statoq->close();
+    header("Location:index.php?errore=Credenziali di accesso errate!");
+    exit();
 }
 ?>

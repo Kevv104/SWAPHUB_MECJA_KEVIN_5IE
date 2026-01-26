@@ -1,6 +1,10 @@
 <?php
   session_start();
   require_once 'connectdb.php';
+  require_once __DIR__ . '/vendor/autoload.php';
+  require_once 'jwt.php';
+  require_once 'auth.php';
+
 
   if(!isset($_SESSION["name"]))
   { 
@@ -8,7 +12,7 @@
     exit();
   }
 
-  $statoq = $connessione->prepare("SELECT role, bgcolor FROM utenti WHERE username = ?");
+  $statoq = $connessione->prepare("SELECT idRuolo, bgcolor FROM utenti WHERE username = ?");
   $statoq->bind_param("s",$_SESSION['name']);
   $statoq->execute();
   $statoq->bind_result($role,$bgcolor);
