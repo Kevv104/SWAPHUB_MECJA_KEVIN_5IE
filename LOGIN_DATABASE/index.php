@@ -2,12 +2,11 @@
 
    session_start();
 
-   if(isset($_SESSION['name']))
+    if(isset($_SESSION['name']) && !isset($_GET['errore']))
    {
       header("location: visualizzaUtente.php");
       exit();
    }
-
 ?>
 
 

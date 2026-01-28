@@ -1,7 +1,14 @@
 <?php
 session_start();
+require_once __DIR__ . '/vendor/autoload.php';
 require_once 'connectdb.php'; //config db
 require_once 'config.php'; //importazione del pepper contenuto nel file config.php
+require_once 'jwt.php';
+
+use Firebase\JWT\JWT;
+use Firebase\JWT\Key;
+
+
 
 if($_SERVER["REQUEST_METHOD"] === "POST") 
 {

@@ -1,21 +1,20 @@
 <?php
   session_start();
+  require_once 'auth.php';
   require_once 'connectdb.php';
   require_once __DIR__ . '/vendor/autoload.php';
   require_once 'jwt.php';
-  require_once 'auth.php';
 
 
-  if(!isset($_SESSION["name"]))
-  { 
-    header("location: index.php?errore=Effettua il login");
-    exit();
-  }
-
-  $statoq = $connessione->prepare("SELECT idRuolo, bgcolor FROM utenti WHERE username = ?");
+  $statoq = $connessione->prepare("
+    SELECT ur.idRuolo, u.bgcolor 
+    FROM utenti u 
+    INNER JOIN UtenteRuolo ur ON u.username = ur.username 
+    WHERE u.username = ?
+");
   $statoq->bind_param("s",$_SESSION['name']);
   $statoq->execute();
-  $statoq->bind_result($role,$bgcolor);
+  $statoq->bind_result($roleID,$bgcolor);
   $statoq->fetch();
   $statoq->close();
 
@@ -41,61 +40,52 @@
       integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN"
       crossorigin="anonymous"
     />
+
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
   </head>
+   <main class="container py-5">
+        <div class="row justify-content-center">
+            <div class="col-md-10 bg-white p-4 rounded shadow-sm">
+                
+                <h1 class="mb-4 fw-bold text-center">Benvenuto, <?php echo htmlspecialchars($_SESSION["name"]); ?>!</h1>
 
-  <body>
-    <header>
-      <!-- place navbar here -->
-    </header>
-    <main>
-      <body style = "background-color: <?php echo htmlspecialchars($bgcolor); ?>">
-         
-      <div class = "container vh-100 d-flex flex-column justify-content-center align-items-center text-center">
-         
-        <h1 class = "mb-3 fw-bold text-center">Benvenuto, <?php echo htmlspecialchars($_SESSION["name"]); ?>!</h1>
+                <div class="mt-4">
+                    <h2 class="h4 mb-3"><i class="bi bi-shield-lock"></i> I tuoi permessi</h2>
+                    <div class="table-responsive">
+                        <table class="table table-dark table-hover align-middle border-secondary m-0">
+                            <thead class="table-secondary text-dark">
+                                <tr>
+                                    <th style="width: 70%">Codice Permesso</th>
+                                    <th style="width: 30%" class="text-center">Azione (Mockup)</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tabella-permessi-body">
+                                </tbody>
+                        </table>
+                    </div>
+                </div>
 
-        <ul class="list-group">
-    <?php
-    switch($role)
-    {
-        case "admin":
-            echo '<li class="list-group-item fw-bold">Gestione di tutti gli utenti piattaforma</li>';
-            echo '<li class="list-group-item fw-bold">Nomina moderatori</li>';
-            echo '<li class="list-group-item fw-bold">Gestione ticket di segnalazione di situazioni gravi, segnalate da moderatori</li>';
-            break;
+                <div class="accordion mt-5" id="rawJsonAccordion">
+                    <div class="accordion-item bg-dark border-secondary">
+                        <h2 class="accordion-header">
+                            <button class="accordion-button collapsed bg-dark text-white" type="button" data-bs-toggle="collapse" data-bs-target="#collapseRawJson">
+                                <i class="bi bi-code-slash me-2"></i> Visualizza dati grezzi richiesta (JSON)
+                            </button>
+                        </h2>
+                        <div id="collapseRawJson" class="accordion-collapse collapse" data-bs-parent="#rawJsonAccordion">
+                            <div class="accordion-body p-0">
+                                <pre id="raw-json" class="text-info bg-black m-0 p-3 small"></pre>
+                            </div>
+                        </div>
+                    </div>
+                </div>
 
-        case "moderatore":
-            echo '<li class="list-group-item fw-bold">Gestione maggiorparte delle segnalazioni</li>';
-            echo '<li class="list-group-item fw-bold">Decisione (di casi non gravi) su eventuali BAN o sospensioni, di account che vanno contro le regole della piattaforma</li>';
-            echo '<li class="list-group-item fw-bold">Libertà di poter rimuovere contenuti inappropriati che vengono trovati, anche senza segnalazione</li>';
-            echo '<li class="list-group-item fw-bold">Segnalazione di casi complessi al admin</li>';
-            break;
+                <div class="text-center mt-4">
+                    <a href="logout.php" class="btn btn-danger">Logout</a>
+                </div>
 
-        case "utente_registrato":
-            echo '<li class="list-group-item fw-bold">Puoi caricare prodotti</li>';
-            echo '<li class="list-group-item fw-bold">Puoi effettuare richieste di scambio</li>';
-            echo '<li class="list-group-item fw-bold">Puoi entrare in gruppi di scambio</li>';
-            echo '<li class="list-group-item fw-bold">Puoi accettare o chiedere richieste d\'amicizia, con altri utenti registrati</li>';
-            echo '<li class="list-group-item fw-bold">Puoi comunicare attraverso commenti, sia durante la trattativa di scambio che sotto gli articoli per chiedere maggiori informazioni</li>';
-            echo '<li class="list-group-item fw-bold">Puoi ricercare prodotti che interessano</li>';
-            break;
-
-        case "utente_non_registrato":
-            echo '<li class="list-group-item fw-bold">Per avere la full SwapHub experience, registrati, è gratis e semplice!</li>';
-            break;
-
-        case "corriere":
-            echo '<li class="list-group-item fw-bold">Gestisci consegne</li>';
-            echo '<li class="list-group-item fw-bold">Aggiorna dati spedizione</li>';
-            break;
-    }
-    ?>
-</ul>
-
-        
-        <a href = "logout.php">Logout</a>
-
-         </div>
+            </div>
+        </div>
     </main>
     <footer>
       <!-- place footer here -->
@@ -112,5 +102,28 @@
       integrity="sha384-BBtl+eGJRgqQAUMxJ7pMwbEyER4l1g+O15P+16Ep7Q9Q+zqX6gSbd85u4mG4QzX+"
       crossorigin="anonymous"
     ></script>
+
+    <script>
+        fetch('api_permessi.php') //invia richiesta get HTTP al server, cercando di ottenere il file api_permessi.php
+            .then(res => res.json()) // promise in js, si attende la risposta dal server, convertendola in oggetto JSON
+            .then(data => { //promise in js, che utilizza i dati ottenuti dalla get
+                
+                
+                document.getElementById('raw-json').innerText = JSON.stringify(data, null, 4); //salvataggio del oggetto json in html element "raw-json", formattazione json.strigify
+                
+                
+                const ul = document.getElementById('lista-permessi'); //individua l'elemento html lista-permessi per inserire il raw json
+                if(data.permessi) { //se l' array permessi esiste nella risposta della get (oggetto json)
+                    data.permessi.forEach(p => { // con un foreach si scorre su ogni singolo permesso dell' array
+                        let li = document.createElement('li'); //si crea un item dove inserire il permesso
+                        li.innerText = p; //viene inserito il testo del permesso
+                        ul.appendChild(li); //aggiunge con append il li alla lista
+                    });
+                }
+            })
+            .catch(err => alert("Errore: " + err)); //gestione eventuali errori
+    </script>
+
+    <script src = "timerJWT.js"></script>
   </body>
 </html>

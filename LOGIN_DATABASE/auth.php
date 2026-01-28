@@ -7,7 +7,7 @@
 
  if(!isset($_SESSION['jwt'])) 
  {
-   header("Location: login.php");
+   header("Location: index.php?errore=Sessione scaduta");
    exit();
  }
 
@@ -18,8 +18,8 @@
 
  } catch(Exception $e)
  {
-    http_response_code(500); //no ok
+    session_unset(); 
     session_destroy(); // il toek  nonè più valido: sessione scaduta
-    header("Location: login.php?errore=Sessione scaduta");
+    header("Location: index.php?errore=" . urlencode("Accesso negato o sessione scaduta"));
     exit();
  }

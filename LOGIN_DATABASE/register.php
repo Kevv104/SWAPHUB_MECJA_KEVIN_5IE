@@ -69,7 +69,7 @@ if($_SERVER["REQUEST_METHOD"] === "POST")
     $_SESSION['ruoli'] = [$ruolo_id];
     $_SESSION['permessi'] = $permessi;
 
-    header("Location: visualizzaUtente.php");
+    header("Location: index.php?msg=Registrazione completata");
     exit();
 }
 else{
@@ -173,11 +173,10 @@ else{
             <div class="mb-3"><input type="color" name="bgcolor" class="form-control form-control-color" value="#32CD32" title="Scegli un colore"></div>
             <div class="mb-3">
                 <select class="form-select" name="role" required>
-                    <option value="1">Utente base</option>
-                    <option value="2" selected>Swapper</option>
-                    <option value="3">Admin</option>
-                    <option value="4">Moderatore</option>
-                    <option value="5">Corriere</option>
+                    <option value="1">Admin</option>
+                    <option value="2">Moderatore</option>
+                    <option value="3" selected>Swapper</option>
+                    <option value="4">Corriere</option>
                 </select>
             </div>
             <button type="submit" class="btn btn-primary w-100">REGISTRATI</button>
