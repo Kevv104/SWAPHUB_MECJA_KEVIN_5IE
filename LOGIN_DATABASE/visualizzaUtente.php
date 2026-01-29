@@ -1,17 +1,18 @@
 <?php
   session_start();
+  require_once 'sicurezzaRotte.php';
+  proteggereRotta();
   require_once 'auth.php';
   require_once 'connectdb.php';
   require_once __DIR__ . '/vendor/autoload.php';
   require_once 'jwt.php';
-
 
   $statoq = $connessione->prepare("
     SELECT ur.idRuolo, u.bgcolor 
     FROM utenti u 
     INNER JOIN UtenteRuolo ur ON u.username = ur.username 
     WHERE u.username = ?
-");
+  ");
   $statoq->bind_param("s",$_SESSION['name']);
   $statoq->execute();
   $statoq->bind_result($roleID,$bgcolor);
@@ -20,47 +21,39 @@
 
   $bgcolor = '#' . ltrim($bgcolor, '#');
 ?>
-
-
 <!doctype html>
-<html lang="en">
+<html lang="it">
   <head>
     <title>Area Riservata Utente</title>
-    <!-- Required meta tags -->
     <meta charset="utf-8" />
-    <meta
-      name="viewport"
-      content="width=device-width, initial-scale=1, shrink-to-fit=no"
-    />
-
-    <!-- Bootstrap CSS v5.2.1 -->
-    <link
-      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
-      rel="stylesheet"
-      integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN"
-      crossorigin="anonymous"
-    />
-
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" />
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
   </head>
-   <main class="container py-5">
+  <body style="background-color: #f8f9fa;">
+    <main class="container py-5">
         <div class="row justify-content-center">
-            <div class="col-md-10 bg-white p-4 rounded shadow-sm">
+            <div class="col-md-10 bg-white p-4 rounded shadow-sm" style="border-top: 5px solid <?php echo $bgcolor; ?>;">
                 
                 <h1 class="mb-4 fw-bold text-center">Benvenuto, <?php echo htmlspecialchars($_SESSION["name"]); ?>!</h1>
 
                 <div class="mt-4">
-                    <h2 class="h4 mb-3"><i class="bi bi-shield-lock"></i> I tuoi permessi</h2>
+                    <div class="d-flex align-items-center mb-3">
+                        <h2 class="h4 mb-0 fw-bold text-dark">I tuoi permessi</h2>
+                        <span id="jwt-timeout-badge" class="badge rounded-pill bg-success ms-3 shadow-sm" style="font-size: 0.9rem;">
+                            <i class="bi bi-clock-history me-1"></i> Tempo rimasto: <span id="countdown-timer">--:--</span>
+                        </span>
+                    </div>
+                   
                     <div class="table-responsive">
-                        <table class="table table-dark table-hover align-middle border-secondary m-0">
-                            <thead class="table-secondary text-dark">
+                        <table class="table table-hover align-middle border m-0">
+                            <thead class="table-light text-dark">
                                 <tr>
                                     <th style="width: 70%">Codice Permesso</th>
                                     <th style="width: 30%" class="text-center">Azione (Mockup)</th>
                                 </tr>
                             </thead>
-                            <tbody id="tabella-permessi-body">
-                                </tbody>
+                            <tbody id="tabella-permessi-body" class="text-dark"></tbody>
                         </table>
                     </div>
                 </div>
@@ -69,7 +62,7 @@
                     <div class="accordion-item bg-dark border-secondary">
                         <h2 class="accordion-header">
                             <button class="accordion-button collapsed bg-dark text-white" type="button" data-bs-toggle="collapse" data-bs-target="#collapseRawJson">
-                                <i class="bi bi-code-slash me-2"></i> Visualizza dati grezzi richiesta (JSON)
+                                <i class="bi bi-code-slash me-2 text-info"></i> Visualizza dati grezzi richiesta (JSON)
                             </button>
                         </h2>
                         <div id="collapseRawJson" class="accordion-collapse collapse" data-bs-parent="#rawJsonAccordion">
@@ -81,49 +74,88 @@
                 </div>
 
                 <div class="text-center mt-4">
-                    <a href="logout.php" class="btn btn-danger">Logout</a>
+                    <a href="logout.php" class="btn btn-danger px-4">Logout</a>
                 </div>
-
             </div>
         </div>
     </main>
-    <footer>
-      <!-- place footer here -->
-    </footer>
-    <!-- Bootstrap JavaScript Libraries -->
-    <script
-      src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js"
-      integrity="sha384-I7E8VVD/ismYTF4hNIPjVp/Zjvgyol6VFvRkX/vR+Vc4jQkC+hVqc2pM8ODewa9r"
-      crossorigin="anonymous"
-    ></script>
 
-    <script
-      src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.min.js"
-      integrity="sha384-BBtl+eGJRgqQAUMxJ7pMwbEyER4l1g+O15P+16Ep7Q9Q+zqX6gSbd85u4mG4QzX+"
-      crossorigin="anonymous"
-    ></script>
-
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.min.js"></script>
+    
     <script>
-        fetch('api_permessi.php') //invia richiesta get HTTP al server, cercando di ottenere il file api_permessi.php
-            .then(res => res.json()) // promise in js, si attende la risposta dal server, convertendola in oggetto JSON
-            .then(data => { //promise in js, che utilizza i dati ottenuti dalla get
-                
-                
-                document.getElementById('raw-json').innerText = JSON.stringify(data, null, 4); //salvataggio del oggetto json in html element "raw-json", formattazione json.strigify
-                
-                
-                const ul = document.getElementById('lista-permessi'); //individua l'elemento html lista-permessi per inserire il raw json
-                if(data.permessi) { //se l' array permessi esiste nella risposta della get (oggetto json)
-                    data.permessi.forEach(p => { // con un foreach si scorre su ogni singolo permesso dell' array
-                        let li = document.createElement('li'); //si crea un item dove inserire il permesso
-                        li.innerText = p; //viene inserito il testo del permesso
-                        ul.appendChild(li); //aggiunge con append il li alla lista
-                    });
-                }
-            })
-            .catch(err => alert("Errore: " + err)); //gestione eventuali errori
+    function timerCountdown(expireTimestamp) {
+        const timerDisplay = document.getElementById('countdown-timer');
+        const badge = document.getElementById('jwt-timeout-badge');
+
+        if (!timerDisplay || !badge) return;
+
+        const interval = setInterval(() => {
+            const oraAttuale = Math.floor(Date.now() / 1000);
+            const tempoRimanente = expireTimestamp - oraAttuale;
+
+            if (tempoRimanente <= 0) {
+                clearInterval(interval);
+                timerDisplay.textContent = "Scaduto";
+                badge.className = "badge rounded-pill bg-danger px-3 py-2";
+                alert("Sessione scaduta! Verrai reindirizzato alla login");
+                window.location.href = "logout.php";
+                return;
+            }
+
+            const m = Math.floor(tempoRimanente / 60);
+            const s = Math.floor(tempoRimanente % 60);
+
+            timerDisplay.textContent = `${m}:${s < 10 ? '0' : ''}${s}`;
+
+            if (tempoRimanente < 60) {
+                badge.className = "badge rounded-pill bg-warning text-dark px-3 py-2";
+            }
+        }, 1000);
+    }
     </script>
 
-    <script src = "timerJWT.js"></script>
+    <script>
+        fetch('api_permessi.php')
+            .then(res => res.json())
+            .then(data => {
+                document.getElementById('raw-json').innerText = JSON.stringify(data, null, 4);
+                const tbody = document.getElementById('tabella-permessi-body');
+                
+                if(data.permessi && tbody) {
+                    tbody.innerHTML = "";
+
+                    data.permessi.forEach(p => {
+                        let tr = document.createElement('tr');
+
+                        let tdNome = document.createElement('td');
+                        tdNome.className = "text-dark fw-bold";
+                        tdNome.textContent = p;
+                        
+                       
+                        let tdAzione = document.createElement('td');
+                        tdAzione.className = "text-center";
+                       tdAzione.innerHTML = `
+                        <a href="mockup_manager.php?azione=${p}" class="btn btn-primary btn-sm px-4 shadow-sm">
+                         Apri Mockup
+                        </a>`; // tutti i pulsanti mandano a un file php (mockupmanager, dove ci sono tutti i 25 permessi mockup)
+
+                        tr.appendChild(tdNome);
+                        tr.appendChild(tdAzione);
+                        tbody.appendChild(tr);
+                    });
+                }
+
+                if(data.scadenza_ts) {
+                    // Ora la funzione esiste sicuramente perché è scritta sopra
+                    timerCountdown(data.scadenza_ts);
+                }
+            })
+            .catch(err => {
+                console.error(err);
+                const tbody = document.getElementById('tabella-permessi-body');
+                if(tbody) tbody.innerHTML = `<tr><td colspan="2" class="text-danger text-center">Errore: ${err.message}</td></tr>`;
+            });
+    </script>
   </body>
 </html>

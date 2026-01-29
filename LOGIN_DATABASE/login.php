@@ -50,16 +50,16 @@ if($_SERVER["REQUEST_METHOD"] === "POST")
             $statoq->close();
 
             // Prelevo permessi associati ai ruoli
-            $permessi = [];
-            if(!empty($ruoli)) {
-                $ids = implode(',', array_map('intval', $ruoli));
+            $permessi = []; //array per contenere i nomi dei permessi
+            if(!empty($ruoli)) { //se l' array non è vuoto
+                $ids = implode(',', array_map('intval', $ruoli)); //conversione array ruoli in stringa numeri separati da virgola
                 $query = "SELECT DISTINCT p.nomePermesso
                           FROM Permesso p
                           JOIN RuoloPermesso rp ON rp.idPermesso = p.idPermesso
-                          WHERE rp.idRuolo IN ($ids)";
-                $result = $connessione->query($query);
-                while($row = $result->fetch_assoc()) {
-                    $permessi[] = $row['nomePermesso'];
+                          WHERE rp.idRuolo IN ($ids)"; //seleziono una volta ruoli con lo stesso permesso, join tra tabella permesso e tabella RuoloPermesso, where specifica solo i permessi che appartengono al id del utente loggato
+                $result = $connessione->query($query); //connessione al db
+                while($row = $result->fetch_assoc()) { //ciclo tra i risultati della query
+                    $permessi[] = $row['nomePermesso']; // per aggiungere al array i nomi permessi trovati 
                 }
             }
 
