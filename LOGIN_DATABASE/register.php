@@ -5,12 +5,16 @@ require_once 'config.php'; //importazione chiave pepper da file config.php
 
 if($_SERVER["REQUEST_METHOD"] === "POST")
 {
+    $nome = trim($_POST['nome']);
+    $cognome = trim($_POST['cognome']);
+    $localita = trim($_POST['localita']);
+    $email = trim($_POST['email']);
     $username = trim($_POST['username']);
     $password = trim($_POST['password']);
     $bgcolor = trim($_POST['bgcolor']);
     $ruolo_id = trim($_POST['role']); //era $_POST['ruolo'], ma nel form il name è "role"
 
-    if(empty($username) || empty($password) || empty($bgcolor) || empty($ruolo_id))
+    if(empty($nome)||empty($cognome)||empty($localita)||empty($email)||empty($username) || empty($password) || empty($bgcolor) || empty($ruolo_id))
     {
         header("Location:register.php?errore=Compila i campi");
         exit();
@@ -36,9 +40,43 @@ if($_SERVER["REQUEST_METHOD"] === "POST")
 
     $bgcolor_clean = ltrim($bgcolor,'#'); //rimuove #
 
+    $foto_path = 'uploads/profile/default.png';
+
+    if(isset($_FILES['fotoprofilo']) && $_FILES['fotoprofilo'] ['error'] === 0) 
+    {
+       $tipiconsentiti = ['image/jpeg', 'image/png', 'image/webp' , 'image/pjpeg'];
+       $maxsize = 2 * 1024  * 1024;
+
+        $mime = mime_content_type($_FILES['fotoprofilo']['tmp_name']);
+
+       if(!in_array($mime, $tipiconsentiti)) 
+       {
+           header("Location: register.php?errore=Formato immagine non valido");
+           exit;
+       }
+
+       if($_FILES['fotoprofilo'] ['size'] > $maxsize)
+       {
+           header("Location: register.php?errore=Immagine troppo grande");
+           exit();
+       }
+
+       $ext = pathinfo($_FILES['fotoprofilo']['name'], PATHINFO_EXTENSION);
+       $filename = uniqid("profile_"). '.' . $ext;
+       $destination = 'uploads/profile/' . $filename;
+
+       if(!move_uploaded_file($_FILES['fotoprofilo'] ['tmp_name'], $destination)) 
+       {
+            header("Location: register.php?errore=Errore caricamento file");
+            exit();
+       }
+
+         $foto_path = $destination;
+    }
+
     //inserimento dati persona nel db
-    $statoq = $connessione->prepare("INSERT INTO utenti (username, password, salt, bgcolor) VALUES (?, ?, ?, ?)");
-    $statoq->bind_param("ssss", $username, $passwordhash, $salt, $bgcolor_clean);
+    $statoq = $connessione->prepare("INSERT INTO utenti (username, password, salt, bgcolor, nome, cognome,localita, fotoprofilo, email) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
+    $statoq->bind_param("sssssssss", $username, $passwordhash, $salt, $bgcolor_clean, $nome, $cognome, $localita, $foto_path, $email);
     $statoq->execute();
     $statoq->close();
 
@@ -68,6 +106,8 @@ if($_SERVER["REQUEST_METHOD"] === "POST")
     $_SESSION['color'] = '#' . $bgcolor_clean;
     $_SESSION['ruoli'] = [$ruolo_id];
     $_SESSION['permessi'] = $permessi;
+    $_SESSION['foto']  = $foto_path;
+
 
     header("Location: index.php?msg=Registrazione completata");
     exit();
@@ -86,6 +126,8 @@ else{
 
     <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+
 
     <style>
         body {
@@ -167,9 +209,38 @@ else{
             <div class="alert alert-danger"><?= htmlspecialchars($_GET["errore"]); ?></div>
         <?php endif; ?>
 
-        <form action="register.php" method="POST">
+        <form action="register.php" method="POST" enctype="multipart/form-data">
+
+            <div class="mb-3"><input type="text" name="nome" class="form-control" placeholder="Nome" required></div>
+            <div class="mb-3"><input type="text" name="cognome" class="form-control" placeholder="Cognome" required></div>
+            <div class="mb-3">
+             <div class="input-group">
+             <span class="input-group-text">
+             <i class="bi bi-geo-alt-fill"></i>
+             </span>
+             <input type="text"
+               name="localita"
+               id="localita"
+               class="form-control"
+               placeholder="Località"
+               autocomplete="off"
+               required>
+             </div>
+             </div>
+
+             <div class="mb-3">
+           <input type="file"
+           name="fotoprofilo"
+           class="form-control"
+            placeholder="Foto Profilo"
+           accept="image/*">
+         </div>
+
+
+            <div class="mb-3"><input type="text" name="email" class="form-control" placeholder="Email" required></div>
             <div class="mb-3"><input type="text" name="username" class="form-control" placeholder="Username" required></div>
             <div class="mb-3"><input type="password" name="password" class="form-control" placeholder="Password" required></div>
+            
             <div class="mb-3"><input type="color" name="bgcolor" class="form-control form-control-color" value="#32CD32" title="Scegli un colore"></div>
             <div class="mb-3">
                 <select class="form-select" name="role" required>
@@ -194,6 +265,59 @@ else{
 
 <!-- Bootstrap JS -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.min.js"></script>
+
+<script> //script per autocomplete città per Località, usando OpenStreetMap
+    const input = document.getElementById("localita");
+
+    let timeout = null;
+
+    input.addEventListener("input", function () {
+    clearTimeout(timeout);
+    const query = this.value;
+
+    if (query.length < 3) return;
+
+    timeout = setTimeout(() => {
+        fetch(`https://nominatim.openstreetmap.org/search?format=json&limit=5&addressdetails=1&city=${query}`)
+            .then(res => res.json())
+            .then(data => showSuggestions(data));
+    }, 300);
+    });
+
+    function showSuggestions(results) {
+    removeSuggestions();
+
+    const list = document.createElement("div");
+    list.className = "list-group position-absolute w-100";
+    list.id = "suggestions";
+
+      results.forEach(place => {
+        const item = document.createElement("button");
+        item.type = "button";
+        item.className = "list-group-item list-group-item-action";
+        item.textContent = place.display_name;
+
+        item.onclick = () => {
+            input.value = place.display_name;
+            removeSuggestions();
+        };
+
+        list.appendChild(item);
+    });
+
+    input.parentNode.appendChild(list);
+}
+
+    function removeSuggestions() {
+    const old = document.getElementById("suggestions");
+    if (old) old.remove();
+}
+
+document.addEventListener("click", function (e) {
+    if (!input.contains(e.target)) removeSuggestions();
+});
+</script>
+
 </body>
 </html>
 

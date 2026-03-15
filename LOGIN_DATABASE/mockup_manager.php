@@ -33,7 +33,10 @@
               switch($p) 
               {
                  //CHAT
-                 case 'create_chat': echo "<h3>Crea chat</h3><p>Sezione della chat.</p>"; break;
+                 case 'create_chat': 
+                 include 'visteSQL/swapper/create_chat.php';
+                 exit;
+
                  case 'send_message': echo "<h3>Invia messaggio</h3><p>sezione per scrivere il messaggio.</p>"; break;
                  case 'view_chat': echo "<h3>Visualizza chat</h3><p>Chat in caricamento....</p>"; break;
                  case 'delete_own_message': echo "<h3>Elimina messaggio</h3><p>Eliminazione in corso...</p>"; break;
