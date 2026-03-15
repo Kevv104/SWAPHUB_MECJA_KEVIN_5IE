@@ -812,7 +812,6 @@ Per ogni nuova rotta, seguire questo template:
 - VIEW SQL: `vista_NOME` (es: `vista_chat_utente`)
 - API: `api_VERBO_NOME.php` (es: `api_get_products.php`)
 - Vista: `VERBO_NOME.php` (es: `manage_products.php`)
-- File numerati per ordine installazione: `01_`, `02_`, ecc.
 
 ### **Percorsi:**
 - API: `/login/api/RUOLO/api_*.php`
