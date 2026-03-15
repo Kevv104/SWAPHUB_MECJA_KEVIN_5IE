@@ -15,7 +15,7 @@
                     <header>
                         <div class="d-flex justify-content-between align-items-center mb-4">
                             <h1 class="fw-bold"><i class="bi bi-plus-circle me-2"></i>Crea Nuova Chat</h1>
-                            <a href="/visualizzaUtente.php" class="btn btn-secondary">
+                            <a href="/login/visualizzaUtente.php" class="btn btn-secondary">
                                 <i class="bi bi-arrow-left me-1"></i>Indietro
                             </a>
                         </div>
@@ -81,7 +81,7 @@
                             <button type="submit" class="btn btn-primary" id="btn-crea">
                                 <i class="bi bi-check-circle me-1"></i>Crea Chat
                             </button>
-                            <a href="/visualizzaUtente.php" class="btn btn-outline-secondary">Annulla</a>
+                            <a href="/login/visualizzaUtente.php" class="btn btn-outline-secondary">Annulla</a>
                         </div>
                     </form>
 
@@ -111,10 +111,12 @@
 
             // STEP 2: Funzione per caricare gli utenti
             function caricaUtenti() {
-                const urlAPI = '/api/swapper/api_get_available_users.php';
+                const urlAPI = '/login/api/swapper/api_get_available_users.php';
                 console.log('🔍 Chiamata API utenti:', window.location.origin + urlAPI);
                 
-                fetch(urlAPI)
+                fetch(urlAPI, {
+                    credentials: 'include' // ← Invia i cookie di sessione!
+                })
                     .then(res => {
                         console.log('📡 Status code:', res.status);
                         if(!res.ok) {
@@ -187,14 +189,15 @@
                 btnCrea.disabled = true;
                 btnCrea.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Creazione...';
                 
-                const urlCreazione = '/api/swapper/api_create_chat.php';
+                const urlCreazione = '/login/api/swapper/api_create_chat.php';
                 console.log('📤 Invio chat a:', window.location.origin + urlCreazione);
                 console.log('📦 Dati:', datiChat);
                 
                 fetch(urlCreazione, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(datiChat)
+                    body: JSON.stringify(datiChat),
+                    credentials: 'include' // ← Invia i cookie di sessione
                 })
                 .then(res => {
                     console.log('📡 Status risposta:', res.status);
@@ -212,7 +215,7 @@
                         document.getElementById('alert-success').style.display = 'block';
                         document.getElementById('success-message').textContent = data.messaggio;
                         setTimeout(() => { 
-                            window.location.href = '/visualizzaUtente.php'; 
+                            window.location.href = '/login/visualizzaUtente.php'; 
                         }, 2000);
                     } else {
                         document.getElementById('alert-error').style.display = 'block';

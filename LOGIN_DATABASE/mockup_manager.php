@@ -47,7 +47,10 @@
                  case 'accept_friend_request': echo "<h3>Accetta amicizia</h3><p>Amicizia accettata.</p>"; break;
                  case 'reject_friend_request': echo "<h3>Rifiuta amicizia</h3><p>Amicizia rifiutata.</p>"; break;
                  case 'subscribe_swapplus': echo "<h3>Abbonamento Swap+</h3><p>Sezione per iscriversi a Swap+.</p>"; break;
-                 case 'view_own_swapplus': echo "<h3>Il tuo abbonamento</h3><p>Visualizza il tuo abbonamento Swap+.</p>"; break;
+                 
+                 case 'view_own_swapplus': 
+                 include 'visteSQL/swapper/view_swapplus.php';
+                 exit;
 
                  //PRODOTTI
                  case 'upload_product': echo "<h3>Carica Prodotto</h3>Sezione caricamento prodotto</p>"; break;
