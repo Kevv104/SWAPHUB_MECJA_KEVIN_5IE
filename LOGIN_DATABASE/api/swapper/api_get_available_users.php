@@ -7,7 +7,9 @@ require_once '../../connectdb.php';
 use Firebase\JWT\JWT;
 use Firebase\JWT\Key;
 
-session_start();
+session_start([
+    'cookie_path' => '/login/'
+]);
 
 if(!isset($_SESSION['jwt'])) {
   http_response_code(401);

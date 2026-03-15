@@ -32,13 +32,17 @@
              //switch che gestisce i mockup dei permessi, suddivisi nelle quattro macro tematiche
               switch($p) 
               {
-                 //CHAT
+                 
                  case 'create_chat': 
                  include 'visteSQL/swapper/create_chat.php';
                  exit;
 
                  case 'send_message': echo "<h3>Invia messaggio</h3><p>sezione per scrivere il messaggio.</p>"; break;
-                 case 'view_chat': echo "<h3>Visualizza chat</h3><p>Chat in caricamento....</p>"; break;
+
+                 case 'view_chat': 
+                 include 'visteSQL/swapper/view_chat.php';
+                 exit;
+                 
                  case 'delete_own_message': echo "<h3>Elimina messaggio</h3><p>Eliminazione in corso...</p>"; break;
                  case 'moderate_chat': echo "<h3>Modera chat</h3><p>Sezione moderazione chat.</p>"; break;
                 
@@ -46,7 +50,10 @@
                  case 'send_friend_request': echo "<h3>Invia amicizia</h3><p>Invio in corso...</p>"; break;
                  case 'accept_friend_request': echo "<h3>Accetta amicizia</h3><p>Amicizia accettata.</p>"; break;
                  case 'reject_friend_request': echo "<h3>Rifiuta amicizia</h3><p>Amicizia rifiutata.</p>"; break;
-                 case 'subscribe_swapplus': echo "<h3>Abbonamento Swap+</h3><p>Sezione per iscriversi a Swap+.</p>"; break;
+                 
+                 case 'subscribe_swapplus': 
+                 include 'visteSQL/swapper/subscribe_swapplus.php';
+                 exit;
                  
                  case 'view_own_swapplus': 
                  include 'visteSQL/swapper/view_swapplus.php';
