@@ -52,7 +52,10 @@
                  include 'visteSQL/swapper/send_friend_request.php';
                  exit;
 
-                 case 'accept_friend_request': echo "<h3>Accetta amicizia</h3><p>Amicizia accettata.</p>"; break;
+                 case 'accept_friend_request': 
+                 include 'visteSQL/swapper/accept_friend_request.php';
+                 exit;
+                 
                  case 'reject_friend_request': echo "<h3>Rifiuta amicizia</h3><p>Amicizia rifiutata.</p>"; break;
                  
                  case 'subscribe_swapplus': 
