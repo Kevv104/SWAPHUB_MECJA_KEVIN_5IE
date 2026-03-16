@@ -1,5 +1,6 @@
 <?php
-  session_start();
+  //session_start();
+   require_once ("sessione.php");
   require_once 'sicurezzaRotte.php';
   proteggereRotta();
   require_once 'auth.php';

@@ -1,7 +1,8 @@
 <?php
 
-   session_start();
-
+   //session_start();
+   require_once ("sessione.php");
+    
     if(isset($_SESSION['name']) && !isset($_GET['errore'])) //se si è gia loggati e non ci sono errori, si viene redirectati a visualizzautente
    {
       header("location: visualizzaUtente.php");

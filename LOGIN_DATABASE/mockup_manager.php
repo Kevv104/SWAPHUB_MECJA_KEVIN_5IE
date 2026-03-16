@@ -1,5 +1,6 @@
 <?php
-   session_start();
+   //session_start();
+   require_once ("sessione.php");
    require_once 'sicurezzaRotte.php';
 
    $p = $_GET['azione'] ?? '';
@@ -47,7 +48,10 @@
                  case 'moderate_chat': echo "<h3>Modera chat</h3><p>Sezione moderazione chat.</p>"; break;
                 
                  //SOCIAL
-                 case 'send_friend_request': echo "<h3>Invia amicizia</h3><p>Invio in corso...</p>"; break;
+                 case 'send_friend_request': 
+                 include 'visteSQL/swapper/send_friend_request.php';
+                 exit;
+
                  case 'accept_friend_request': echo "<h3>Accetta amicizia</h3><p>Amicizia accettata.</p>"; break;
                  case 'reject_friend_request': echo "<h3>Rifiuta amicizia</h3><p>Amicizia rifiutata.</p>"; break;
                  

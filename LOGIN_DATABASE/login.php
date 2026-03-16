@@ -1,5 +1,6 @@
 <?php
-session_start();
+//session_start();
+   require_once ("sessione.php");
 require_once __DIR__ . '/vendor/autoload.php';
 require_once 'connectdb.php'; //config db
 require_once 'config.php'; //importazione del pepper contenuto nel file config.php
@@ -68,6 +69,7 @@ if($_SERVER["REQUEST_METHOD"] === "POST")
             $_SESSION['color'] = "#" . $bgcolor;
             $_SESSION['ruoli'] = $ruoli;
             $_SESSION['permessi'] = $permessi;
+
 
             $payload =  //payload jwt
             [

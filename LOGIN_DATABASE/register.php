@@ -1,5 +1,6 @@
 <?php
-session_start();
+//session_start();
+   require_once ("sessione.php");
 require_once 'connectdb.php'; //configurazione per db
 require_once 'config.php'; //importazione chiave pepper da file config.php
 
