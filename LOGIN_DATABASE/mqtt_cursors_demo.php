@@ -210,7 +210,7 @@ $userColor = $colors[array_rand($colors)];
         const cursors = {};
         const connectedUsers = new Set();
         
-        const brokerUrl = 'wss://vic-searches-listings-budget.trycloudflare.com';
+        const brokerUrl = 'wss://item-tions-roy-fields.trycloudflare.com';
         const client = mqtt.connect(brokerUrl);
         
         //eventi connessione
