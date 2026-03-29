@@ -7,25 +7,19 @@ require_once '../../connectdb.php';
 use Firebase\JWT\JWT;
 use Firebase\JWT\Key;
 
-/**
- * --- CONFIGURAZIONE AMBIENTE (BYPASS POSTMAN) ---
- */
 $isDevelopment = true; 
 
 if ($isDevelopment) {
-    // In modalità test, cerchiamo le richieste arrivate a 'gianno'
     $currentUser = 'gianno'; 
 } else {
     if (session_status() === PHP_SESSION_NONE) {
         session_start(['cookie_path' => '/login/']);
     }
-
     if(!isset($_SESSION['jwt'])) {
         http_response_code(401);
         echo json_encode(["success" => false, "error" => "Non autorizzato"]); 
         exit;
     }
-
     try {
         $decoded = JWT::decode($_SESSION['jwt'], new Key(JWT_SECRET, JWT_ALGO));
         $currentUser = $decoded->sub;
@@ -37,26 +31,14 @@ if ($isDevelopment) {
 }
 
 try {
-    // Query per ottenere le richieste in attesa (stato = 'inviata') 
-    // dove il destinatario è l'utente corrente
+    // Usiamo la vista_richieste_amicizia
+    // Assicurati che la vista includa i campi: idRichiesta, UserMittente, UserDestinatario, 
+    // nomeMittente, cognomeMittente, dataInvio, stato, commento, fotoMittente, localitaMittente
     $query = $connessione->prepare("
-        SELECT 
-            r.idRichiesta,
-            r.UserMittente,
-            r.UserDestinatario,
-            r.stato,
-            r.commento,
-            r.dataInvio,
-            u.Nome,
-            u.Cognome,
-            u.Email,
-            u.fotoprofilo,
-            u.localita
-        FROM RichiesteAmicizia r
-        JOIN utenti u ON r.UserMittente = u.username
-        WHERE r.UserDestinatario = ? 
-        AND r.stato = 'inviata'
-        ORDER BY r.dataInvio DESC
+        SELECT * FROM vista_richieste_amicizia 
+        WHERE UserDestinatario = ? 
+        AND stato = 'inviata'
+        ORDER BY dataInvio DESC
     ");
 
     $query->bind_param("s", $currentUser);
@@ -68,12 +50,11 @@ try {
         $richieste[] = [
             'idRichiesta'   => $row['idRichiesta'],
             'userMittente'  => $row['UserMittente'],
-            'Nome'          => $row['Nome'],
-            'Cognome'       => $row['Cognome'],
-            'Email'         => $row['Email'],
-            'fotoprofilo'   => $row['fotoprofilo'],
-            'localita'      => $row['localita'],
-            'commento'      => $row['commento'],
+            'Nome'          => $row['nomeMittente'],
+            'Cognome'       => $row['cognomeMittente'],
+            'fotoprofilo'   => $row['fotoMittente'] ?? 'uploads/profile/default.png',
+            'localita'      => $row['localitaMittente'] ?? '',
+            'commento'      => $row['commento'] ?? '',
             'dataInvio'     => $row['dataInvio'],
             'stato'         => $row['stato']
         ];
@@ -91,9 +72,6 @@ try {
 
 } catch(Exception $e) {
     http_response_code(500);
-    echo json_encode([
-        "success" => false,
-        "error" => "Errore del server: " . $e->getMessage()
-    ]);
+    echo json_encode(["success" => false, "error" => "Errore: " . $e->getMessage()]);
 }
 ?>

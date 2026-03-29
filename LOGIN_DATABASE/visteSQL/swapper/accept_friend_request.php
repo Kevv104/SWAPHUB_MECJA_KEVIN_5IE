@@ -104,164 +104,181 @@
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
   
   <script>
-    //formatta data relativa
+    /**
+     * Formatta la data in modo relativo (es. "5 min fa", "2 ore fa")
+     */
     function formatDate(dateString) {
-      const date = new Date(dateString);
-      const now = new Date();
-      const diffMs = now - date;
-      const diffMins = Math.floor(diffMs / 60000);
-      const diffHours = Math.floor(diffMs / 3600000);
-      const diffDays = Math.floor(diffMs / 86400000);
-      
-      if(diffMins < 1) return 'Ora';
-      if(diffMins < 60) return diffMins + ' min fa';
-      if(diffHours < 24) return diffHours + ' ore fa';
-      if(diffDays < 7) return diffDays + ' giorni fa';
-      
-      return date.toLocaleDateString('it-IT', { 
-        day: 'numeric',
-        month: 'short',
-        year: 'numeric'
-      });
-    }
+        if (!dateString) return '';
+        const date = new Date(dateString);
+        const now = new Date();
+        const diffMs = now - date;
+        const diffMins = Math.floor(diffMs / 60000);
+        const diffHours = Math.floor(diffMs / 3600000);
+        const diffDays = Math.floor(diffMs / 86400000);
 
-    //funzione accetta richiesta amicizia
-    function acceptRequest(idRichiesta, nomeCognome, cardElement) {
-      const btnAccept = cardElement.querySelector('.btn-accept');
-      const btnReject = cardElement.querySelector('.btn-reject');
-      
-      btnAccept.disabled = true;
-      btnReject.disabled = true;
-      btnAccept.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Accettazione...';
-      
-      fetch('/login/api/swapper/api_accept_friend_request.php', { //fetch a api per accettare richiesta amicizia
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ idRichiesta: idRichiesta })
-      })
-        .then(res => res.json())
-        .then(data => {
-          if(data.success) {
-            //successo
-            const toastSuccess = new bootstrap.Toast(document.getElementById('toast-success'));
-            document.getElementById('toast-message').textContent = 
-              `Ora sei amico con ${nomeCognome}!`;
-            toastSuccess.show();
-            
-            //rimuovi card
-            cardElement.remove();
-            
-            //aggiorna contatore
-            const totalRequests = parseInt(document.getElementById('total-requests').textContent);
-            document.getElementById('total-requests').textContent = totalRequests - 1;
-            
-            //se non ci sono più richieste
-            if(totalRequests - 1 === 0) {
-              document.getElementById('requests-list').style.display = 'none';
-              document.getElementById('no-requests').style.display = 'block';
-            }
-            
-          } else {
-            //errore
-            const toastError = new bootstrap.Toast(document.getElementById('toast-error'));
-            document.getElementById('toast-error-message').textContent = data.error;
-            toastError.show();
-            
-            btnAccept.disabled = false;
-            btnReject.disabled = false;
-            btnAccept.innerHTML = '<i class="bi bi-check-circle me-1"></i>Accetta';
-          }
-        })
-        .catch(err => {
-          console.error(err);
-          const toastError = new bootstrap.Toast(document.getElementById('toast-error'));
-          document.getElementById('toast-error-message').textContent = 'Errore di connessione';
-          toastError.show();
-          
-          btnAccept.disabled = false;
-          btnReject.disabled = false;
-          btnAccept.innerHTML = '<i class="bi bi-check-circle me-1"></i>Accetta';
+        if (diffMins < 1) return 'Ora';
+        if (diffMins < 60) return diffMins + ' min fa';
+        if (diffHours < 24) return diffHours + ' ore fa';
+        if (diffDays < 7) return diffDays + ' giorni fa';
+
+        return date.toLocaleDateString('it-IT', {
+            day: 'numeric',
+            month: 'short',
+            year: 'numeric'
         });
     }
 
-    //rifiuta richiesta (placeholder)
-    function rejectRequest(idRichiesta, nomeCognome, cardElement) {
-      alert('Funzione "Rifiuta" da implementare!\nID richiesta: ' + idRichiesta);
+    /**
+     * Funzione per ACCETTARE una richiesta
+     */
+    function acceptRequest(idRichiesta, nomeCognome, cardElement) {
+        const btnAccept = cardElement.querySelector('.btn-accept');
+        const btnReject = cardElement.querySelector('.btn-reject');
+
+        btnAccept.disabled = true;
+        btnReject.disabled = true;
+        btnAccept.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>...';
+
+        fetch('/login/api/swapper/api_accept_friend_request.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({ idRichiesta: idRichiesta })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                const toastSuccess = new bootstrap.Toast(document.getElementById('toast-success'));
+                document.getElementById('toast-message').textContent = `Ora sei amico con ${nomeCognome}!`;
+                toastSuccess.show();
+                cardElement.remove();
+                updateCounter();
+            } else {
+                throw new Error(data.error || 'Errore durante l\'accettazione');
+            }
+        })
+        .catch(err => {
+            alert(err.message);
+            btnAccept.disabled = false;
+            btnReject.disabled = false;
+            btnAccept.innerHTML = '<i class="bi bi-check-circle me-1"></i>Accetta';
+        });
     }
 
-    //carica richieste
-    fetch('/login/api/swapper/api_get_pending_requests.php', {
-      credentials: 'include'
-    })
-      .then(res => res.json())
-      .then(data => {
-        document.getElementById('loading').style.display = 'none';
-        
-        if(data.success) {
-          if(data.richieste.length === 0) {
+    /**
+     * Funzione per RIFIUTARE una richiesta
+     */
+    function rejectRequest(idRichiesta, nomeCognome, cardElement) {
+        if (!confirm(`Vuoi davvero rifiutare la richiesta di ${nomeCognome}?`)) return;
+
+        const btnAccept = cardElement.querySelector('.btn-accept');
+        const btnReject = cardElement.querySelector('.btn-reject');
+
+        btnAccept.disabled = true;
+        btnReject.disabled = true;
+
+        fetch('/login/api/swapper/api_reject_friend_request.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({ idRichiesta: idRichiesta })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                cardElement.remove();
+                updateCounter();
+            } else {
+                alert("Errore: " + data.error);
+                btnAccept.disabled = false;
+                btnReject.disabled = false;
+            }
+        })
+        .catch(err => console.error("Errore di rete:", err));
+    }
+
+    /**
+     * Aggiorna il contatore visivo delle richieste
+     */
+    function updateCounter() {
+        const container = document.getElementById('requests-container');
+        const count = container.children.length;
+        document.getElementById('total-requests').textContent = count;
+        if (count === 0) {
+            document.getElementById('requests-list').style.display = 'none';
             document.getElementById('no-requests').style.display = 'block';
-          } else {
-            document.getElementById('requests-list').style.display = 'block';
-            document.getElementById('total-requests').textContent = data.totalRichieste;
-            
-            const container = document.getElementById('requests-container');
-            
-            data.richieste.forEach(req => {
-              const requestCard = document.createElement('div');
-              requestCard.className = 'card request-card mb-3';
-              
-              requestCard.innerHTML = `
-                <div class="card-body">
-                  <div class="d-flex align-items-start">
-                    <img src="/login/${req.fotoprofilo}" 
-                         alt="${req.Nome}" 
-                         class="user-avatar me-3"
-                         onerror="this.src='/login/IMG/noimage.jpg'">
-                    
-                    <div class="flex-grow-1">
-                      <h5 class="mb-1">${req.Nome} ${req.Cognome}</h5>
-                      <p class="text-muted small mb-1">@${req.userMittente}</p>
-                      ${req.localita ? `<p class="text-muted small mb-2">
-                        <i class="bi bi-geo-alt"></i> ${req.localita}
-                      </p>` : ''}
-                      ${req.commento ? `<p class="mb-2">
-                        <i class="bi bi-chat-quote"></i> 
-                        <em>"${req.commento}"</em>
-                      </p>` : ''}
-                      <small class="text-muted">
-                        <i class="bi bi-clock"></i> ${formatDate(req.dataInvio)}
-                      </small>
-                    </div>
-                    
-                    <div class="d-flex gap-2">
-                      <button class="btn btn-success btn-sm btn-accept" 
-                              onclick="acceptRequest(${req.idRichiesta}, '${req.Nome} ${req.Cognome}', this.closest('.card'))">
-                        <i class="bi bi-check-circle me-1"></i>Accetta
-                      </button>
-                      <button class="btn btn-outline-danger btn-sm btn-reject" 
-                              onclick="rejectRequest(${req.idRichiesta}, '${req.Nome} ${req.Cognome}', this.closest('.card'))">
-                        <i class="bi bi-x-circle me-1"></i>Rifiuta
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              `;
-              
-              container.appendChild(requestCard);
-            });
-          }
-        } else {
-          document.getElementById('error-container').style.display = 'block';
-          document.getElementById('error-message').textContent = data.error || 'Errore nel caricamento';
         }
-      })
-      .catch(err => {
-        console.error(err);
+    }
+
+    /**
+     * Caricamento INIZIALE delle richieste
+     */
+    fetch('/login/api/swapper/api_get_pending_requests.php', {
+        credentials: 'include'
+    })
+    .then(res => res.json())
+    .then(data => {
+        document.getElementById('loading').style.display = 'none';
+
+        if (data.success) {
+            if (data.richieste.length === 0) {
+                document.getElementById('no-requests').style.display = 'block';
+            } else {
+                document.getElementById('requests-list').style.display = 'block';
+                document.getElementById('total-requests').textContent = data.totalRichieste;
+                const container = document.getElementById('requests-container');
+
+                data.richieste.forEach(req => {
+                    const requestCard = document.createElement('div');
+                    requestCard.className = 'card request-card mb-3';
+                    
+                    // Gestione dinamica percorso immagine
+                    const fotoPath = req.fotoprofilo.startsWith('uploads') ? `/login/${req.fotoprofilo}` : req.fotoprofilo;
+
+                    requestCard.innerHTML = `
+                        <div class="card-body">
+                            <div class="d-flex align-items-start">
+                                <img src="${fotoPath}" 
+                                     alt="${req.Nome}" 
+                                     class="user-avatar me-3"
+                                     onerror="this.src='/login/uploads/profile/default.png'">
+                                
+                                <div class="flex-grow-1">
+                                    <h5 class="mb-1">${req.Nome} ${req.Cognome}</h5>
+                                    <p class="text-muted small mb-1">@${req.userMittente}</p>
+                                    ${req.localita ? `<p class="text-muted small mb-2"><i class="bi bi-geo-alt"></i> ${req.localita}</p>` : ''}
+                                    ${req.commento ? `<p class="mb-2"><i class="bi bi-chat-quote"></i> <em>"${req.commento}"</em></p>` : ''}
+                                    <small class="text-muted">
+                                        <i class="bi bi-clock"></i> ${formatDate(req.dataInvio)}
+                                    </small>
+                                </div>
+                                
+                                <div class="d-flex gap-2">
+                                    <button class="btn btn-success btn-sm btn-accept" 
+                                            onclick="acceptRequest(${req.idRichiesta}, '${req.Nome} ${req.Cognome}', this.closest('.card'))">
+                                        <i class="bi bi-check-circle me-1"></i>Accetta
+                                    </button>
+                                    <button class="btn btn-outline-danger btn-sm btn-reject" 
+                                            onclick="rejectRequest(${req.idRichiesta}, '${req.Nome} ${req.Cognome}', this.closest('.card'))">
+                                        <i class="bi bi-x-circle me-1"></i>Rifiuta
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    container.appendChild(requestCard);
+                });
+            }
+        } else {
+            document.getElementById('error-container').style.display = 'block';
+            document.getElementById('error-message').textContent = data.error || 'Errore nel caricamento';
+        }
+    })
+    .catch(err => {
         document.getElementById('loading').style.display = 'none';
         document.getElementById('error-container').style.display = 'block';
-        document.getElementById('error-message').textContent = 'Errore di connessione';
-      });
-  </script>
+        document.getElementById('error-message').textContent = 'Errore di connessione al server.';
+    });
+</script>
 </body>
 </html>
