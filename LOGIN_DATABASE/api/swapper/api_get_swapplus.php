@@ -18,7 +18,7 @@ use Firebase\JWT\Key;
 /**
  * --- SOLUZIONE B: RILEVAMENTO POSTMAN ---
  * Se la richiesta arriva da Postman, forziamo l'utente 'gianno' per saltare il muro dei cookie.
- * Se arriva dal browser, seguiamo la tua logica originale JWT.
+ * Se arriva dal browser, seguiamo la  logica originale JWT.
  */
 $userAgent = $_SERVER['HTTP_USER_AGENT'] ?? '';
 $isPostman = (strpos($userAgent, 'Postman') !== false);

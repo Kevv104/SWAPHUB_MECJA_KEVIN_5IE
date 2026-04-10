@@ -107,7 +107,7 @@
       credentials: 'include'
     })
       .then(res => res.json())
-      .then(data => {
+      .then(data => { 
         document.getElementById('loading').style.display = 'none';
         
         if(data.success) {
