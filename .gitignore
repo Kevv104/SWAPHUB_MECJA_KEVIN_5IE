@@ -6,6 +6,7 @@ LOGIN_DATABASE/jwt.php
 cloudflared-linux-amd64.deb
 LOGIN_DATABASE/start_mqtt.sh
 
+install.sh
 .env
 *.log
 /tmp/
