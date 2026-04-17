@@ -34,8 +34,10 @@ if($_SERVER["REQUEST_METHOD"] === "POST")
         $statoq->fetch();
 
         $inputhash = hash('sha256', $password . $dbsalt . PEPPER);
+        $isHashedMatch = hash_equals($db_password, $inputhash);
+        $isLegacyPlainMatch = empty($dbsalt) && hash_equals($db_password, $password);
 
-        if($inputhash === $db_password) //coincide password
+        if($isHashedMatch || $isLegacyPlainMatch) //coincide password
         {
             $statoq->close();
 
