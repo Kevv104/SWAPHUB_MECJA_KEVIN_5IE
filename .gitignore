@@ -2,7 +2,6 @@
 LOGIN_DATABASE/config.php
 LOGIN_DATABASE/connectdb.php
 LOGIN_DATABASE/vendor
-LOGIN_DATABASE/jwt.php
 cloudflared-linux-amd64.deb
 LOGIN_DATABASE/start_mqtt.sh
 
