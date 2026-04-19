@@ -5,6 +5,7 @@ require_once __DIR__ . '/vendor/autoload.php';
 require_once 'connectdb.php'; //config db
 require_once 'config.php'; //importazione del pepper contenuto nel file config.php
 require_once 'jwt.php';
+require_once __DIR__ . '/config/TenantManager.php';
 
 use Firebase\JWT\JWT;
 use Firebase\JWT\Key;
@@ -13,22 +14,27 @@ use Firebase\JWT\Key;
 
 if($_SERVER["REQUEST_METHOD"] === "POST") 
 {
-    $username = trim($_POST["username"]);
-    $password = trim($_POST["password"]);
+    $username = trim($_POST["username"] ?? "");
+    $password = trim($_POST["password"] ?? "");
+    $tenant_id = isset($_POST['tenant_id']) ? (int)$_POST['tenant_id'] : null;
 
-    if(empty($username) || empty($password)) //verifica dei campi vuoti
+    if(empty($username) || empty($password) || !$tenant_id)
     {
         header("Location:index.php?errore=Compila");
         exit();
     }
 
-    // Prelevo dati utente
-    $statoq = $connessione->prepare("SELECT password, salt, bgcolor FROM utenti WHERE username = ?");
-    $statoq->bind_param("s", $username);
+    if (!TenantManager::validate_tenant_id($tenant_id)) {
+        header("Location:index.php?errore=Tenant non valido");
+        exit();
+    }
+
+    $statoq = $connessione->prepare("SELECT password, salt, bgcolor FROM utenti WHERE username = ? AND tenant_id = ?");
+    $statoq->bind_param("si", $username, $tenant_id);
     $statoq->execute();
     $statoq->store_result();
 
-    if($statoq->num_rows == 1) //se l'utente esiste
+    if($statoq->num_rows == 1)
     {
         $statoq->bind_result($db_password, $dbsalt, $bgcolor);
         $statoq->fetch();
@@ -37,11 +43,10 @@ if($_SERVER["REQUEST_METHOD"] === "POST")
         $isHashedMatch = hash_equals($db_password, $inputhash);
         $isLegacyPlainMatch = empty($dbsalt) && hash_equals($db_password, $password);
 
-        if($isHashedMatch || $isLegacyPlainMatch) //coincide password
+        if($isHashedMatch || $isLegacyPlainMatch)
         {
             $statoq->close();
 
-            // Prelevo ruoli dell'utente
             $statoq = $connessione->prepare("SELECT idRuolo FROM UtenteRuolo WHERE username = ?");
             $statoq->bind_param("s", $username);
             $statoq->execute();
@@ -52,42 +57,46 @@ if($_SERVER["REQUEST_METHOD"] === "POST")
             }
             $statoq->close();
 
-            // Prelevo permessi associati ai ruoli
-            $permessi = []; //array per contenere i nomi dei permessi
-            if(!empty($ruoli)) { //se l' array non è vuoto
-                $ids = implode(',', array_map('intval', $ruoli)); //conversione array ruoli in stringa numeri separati da virgola
+            $permessi = [];
+            if(!empty($ruoli)) {
+                $ids = implode(',', array_map('intval', $ruoli));
                 $query = "SELECT DISTINCT p.nomePermesso
                           FROM Permesso p
                           JOIN RuoloPermesso rp ON rp.idPermesso = p.idPermesso
-                          WHERE rp.idRuolo IN ($ids)"; //seleziono una volta ruoli con lo stesso permesso, join tra tabella permesso e tabella RuoloPermesso, where specifica solo i permessi che appartengono al id del utente loggato
-                $result = $connessione->query($query); //connessione al db
-                while($row = $result->fetch_assoc()) { //ciclo tra i risultati della query
-                    $permessi[] = $row['nomePermesso']; // per aggiungere al array i nomi permessi trovati 
+                          WHERE rp.idRuolo IN ($ids)";
+                $result = $connessione->query($query);
+                while($row = $result->fetch_assoc()) {
+                    $permessi[] = $row['nomePermesso'];
                 }
             }
 
-            // Imposto sessione
             $_SESSION['name'] = $username;
+            $_SESSION['tenant_id'] = $tenant_id;
+            $_SESSION['logged_in'] = true;
             $_SESSION['color'] = "#" . $bgcolor;
             $_SESSION['ruoli'] = $ruoli;
             $_SESSION['permessi'] = $permessi;
 
 
-            $payload =  //payload jwt
+            $payload =
             [
                 'iss' => 'swaphub',
                 'iat' => time(),
                 'exp' => time() + JWT_TTL,
                 'sub' => $username,
+                'tenant_id' => $tenant_id,
                 'ruoli' => $ruoli,
                 'permessi' => $permessi
 
 
             ];
 
-            $jwt = JWT::encode($payload, JWT_SECRET, JWT_ALGO); //crea il jwt alla login
+            $jwt = JWT::encode($payload, JWT_SECRET, JWT_ALGO);
 
-            $_SESSION['jwt'] = $jwt; //salvataggio del token in session
+            $_SESSION['jwt'] = $jwt;
+            $_SESSION['jwt_token'] = $jwt;
+
+            setcookie('last_tenant', $tenant_id, time() + (90 * 24 * 60 * 60), '/');
 
             header("Location: visualizzaUtente.php");
             exit();

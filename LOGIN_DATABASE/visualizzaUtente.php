@@ -7,6 +7,7 @@
   require_once 'connectdb.php';
   require_once __DIR__ . '/vendor/autoload.php';
   require_once 'jwt.php';
+    require_once __DIR__ . '/config/TenantManager.php';
 
   $statoq = $connessione->prepare("
     SELECT ur.idRuolo, u.bgcolor 
@@ -21,6 +22,8 @@
   $statoq->close();
 
   $bgcolor = '#' . ltrim($bgcolor, '#');
+    $tenant = TenantManager::get_current_tenant();
+    $tenant_name = $tenant['city'] ?? ('Tenant #' . ($_SESSION['tenant_id'] ?? 'N/D'));
 ?>
 <!doctype html>
 <html lang="it">
@@ -37,6 +40,12 @@
             <div class="col-md-10 bg-white p-4 rounded shadow-sm" style="border-top: 5px solid <?php echo $bgcolor; ?>;">
                 
                 <h1 class="mb-4 fw-bold text-center">Benvenuto, <?php echo htmlspecialchars($_SESSION["name"]); ?>!</h1>
+
+                <div class="text-center mb-4">
+                    <span class="badge rounded-pill bg-primary px-3 py-2 shadow-sm" style="font-size: 0.95rem;">
+                        <i class="bi bi-geo-alt me-1"></i> Tenant attivo: <?php echo htmlspecialchars($tenant_name); ?>
+                    </span>
+                </div>
 
                 <div class="mt-4">
                     <div class="d-flex align-items-center mb-3">
