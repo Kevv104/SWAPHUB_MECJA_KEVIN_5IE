@@ -6,6 +6,7 @@ cloudflared-linux-amd64.deb
 LOGIN_DATABASE/start_mqtt.sh
 
 install.sh
+pubblica.sh
 .env
 *.log
 /tmp/
