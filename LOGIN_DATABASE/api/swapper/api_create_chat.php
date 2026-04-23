@@ -10,18 +10,12 @@ require_once '../../connectdb.php';
 use Firebase\JWT\JWT;
 use Firebase\JWT\Key;
 
-/**
- * --- CONFIGURAZIONE AMBIENTE (BYPASS POSTMAN) ---
- * Attivo solo se richiesto esplicitamente.
- * Esempi:
- *   /api_create_chat.php?dev_bypass=1
- *   Header: X-Dev-Bypass: 1
- */
+//bypass per sviluppo locale senza dover passare il jwt da postman (o simili)
 $isDevelopment = (
     (isset($_GET['dev_bypass']) && $_GET['dev_bypass'] === '1') ||
     (isset($_SERVER['HTTP_X_DEV_BYPASS']) && $_SERVER['HTTP_X_DEV_BYPASS'] === '1')
 );
-
+//se è attivo il bypass, forza un utente e tenant specifico
 if ($isDevelopment) {
     $currentUser = 'gianno'; 
     $tenantLookup = $connessione->prepare("SELECT tenant_id FROM utenti WHERE username = ?");
@@ -31,6 +25,7 @@ if ($isDevelopment) {
     $tenantRow = $tenantResult->fetch_assoc();
     $tenantLookup->close();
 
+
     if (!$tenantRow || empty($tenantRow['tenant_id'])) {
         http_response_code(401);
         echo json_encode(["success" => false, "error" => "Tenant utente non trovato"]);
@@ -39,7 +34,7 @@ if ($isDevelopment) {
 
     $currentTenantId = (int)$tenantRow['tenant_id'];
 } else {
-    if (session_status() === PHP_SESSION_NONE) {
+    if (session_status() === PHP_SESSION_NONE) { 
         session_start(['cookie_path' => '/login/']);
     }
 
@@ -49,6 +44,7 @@ if ($isDevelopment) {
         exit;
     }
 
+    // Decodifica e verifica del JWT
     try {
         $decoded = JWT::decode($_SESSION['jwt'], new Key(JWT_SECRET, JWT_ALGO));
         $currentUser = $decoded->sub;
@@ -95,7 +91,7 @@ try {
         exit;
     }
 
-    $checkAuthor = $connessione->prepare("SELECT 1 FROM utenti WHERE username = ? AND tenant_id = ?");
+    $checkAuthor = $connessione->prepare("SELECT 1 FROM utenti WHERE username = ? AND tenant_id = ?"); // Verifica che l'autore della chat appartenga al tenant
     $checkAuthor->bind_param("si", $currentUser, $currentTenantId);
     $checkAuthor->execute();
     $checkAuthor->store_result();
