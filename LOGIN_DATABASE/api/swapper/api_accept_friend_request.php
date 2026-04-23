@@ -13,7 +13,7 @@ use Firebase\JWT\Key;
 /**
  * --- CONFIGURAZIONE AMBIENTE (BYPASS POSTMAN) ---
  */
-$isDevelopment = true; 
+$isDevelopment = false; 
 
 if ($isDevelopment) {
     $currentUser = 'gianno'; 
