@@ -16,8 +16,21 @@ use Firebase\JWT\Key;
 $isDevelopment = true; 
 
 if ($isDevelopment) {
-    // In modalità test, facciamo finta di essere 'gianno' (il destinatario della richiesta)
     $currentUser = 'gianno'; 
+    $tenantLookup = $connessione->prepare("SELECT tenant_id FROM utenti WHERE username = ?");
+    $tenantLookup->bind_param("s", $currentUser);
+    $tenantLookup->execute();
+    $tenantResult = $tenantLookup->get_result();
+    $tenantRow = $tenantResult->fetch_assoc();
+    $tenantLookup->close();
+
+    if (!$tenantRow || empty($tenantRow['tenant_id'])) {
+        http_response_code(401);
+        echo json_encode(["success" => false, "error" => "Tenant utente non trovato"]);
+        exit;
+    }
+
+    $currentTenantId = (int)$tenantRow['tenant_id'];
 } else {
     if (session_status() === PHP_SESSION_NONE) {
         session_start(['cookie_path' => '/login/']);
@@ -32,6 +45,10 @@ if ($isDevelopment) {
     try {
         $decoded = JWT::decode($_SESSION['jwt'], new Key(JWT_SECRET, JWT_ALGO));
         $currentUser = $decoded->sub;
+        $currentTenantId = isset($decoded->tenant_id) ? (int)$decoded->tenant_id : 0;
+        if(!$currentUser || $currentTenantId <= 0) {
+            throw new Exception("Token privo di tenant valido");
+        }
     } catch (Exception $e) {
         http_response_code(401);
         echo json_encode(["success" => false, "error" => "Token non valido"]);
@@ -59,14 +76,18 @@ try {
         exit;
     }
 
-    // 1. Verifica esistenza richiesta e che il destinatario sia l'utente corrente
     $checkQuery = $connessione->prepare("
-        SELECT idRichiesta, UserMittente, UserDestinatario, stato 
-        FROM RichiesteAmicizia 
-        WHERE idRichiesta = ? AND UserDestinatario = ?
+                SELECT ra.idRichiesta, ra.UserMittente, ra.UserDestinatario, ra.stato
+                FROM RichiesteAmicizia ra
+                JOIN utenti um ON um.username = ra.UserMittente
+                JOIN utenti ud ON ud.username = ra.UserDestinatario
+                WHERE ra.idRichiesta = ?
+                    AND ra.UserDestinatario = ?
+                    AND um.tenant_id = ?
+                    AND ud.tenant_id = ?
     ");
 
-    $checkQuery->bind_param("is", $idRichiesta, $currentUser);
+        $checkQuery->bind_param("isii", $idRichiesta, $currentUser, $currentTenantId, $currentTenantId);
     $checkQuery->execute();
     $result = $checkQuery->get_result();
 

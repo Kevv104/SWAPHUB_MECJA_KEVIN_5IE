@@ -13,11 +13,12 @@ if($_SERVER["REQUEST_METHOD"] === "POST")
     $username = trim($_POST['username']);
     $password = trim($_POST['password']);
     $bgcolor = trim($_POST['bgcolor']);
-    $ruolo_id = trim($_POST['role']); //era $_POST['ruolo'], ma nel form il name è "role"
+    $ruolo_id = trim($_POST['role']);
+    $tenant_id = isset($_POST['tenant_id']) ? (int)$_POST['tenant_id'] : null;
 
-    if(empty($nome)||empty($cognome)||empty($localita)||empty($email)||empty($username) || empty($password) || empty($bgcolor) || empty($ruolo_id))
+    if(empty($nome)||empty($cognome)||empty($localita)||empty($email)||empty($username) || empty($password) || empty($bgcolor) || empty($ruolo_id) || !$tenant_id)
     {
-        header("Location:register.php?errore=Compila i campi");
+        header("Location: /login/register.php?errore=Compila i campi");
         exit();
     }
 
@@ -30,7 +31,7 @@ if($_SERVER["REQUEST_METHOD"] === "POST")
     if($statoq->num_rows > 0)
     {
         $statoq->close();
-        header("Location:register.php?errore=Utente già esistente!");
+        header("Location: /login/register.php?errore=Utente già esistente!");
         exit();
     }
     $statoq->close();
@@ -52,13 +53,13 @@ if($_SERVER["REQUEST_METHOD"] === "POST")
 
        if(!in_array($mime, $tipiconsentiti)) 
        {
-           header("Location: register.php?errore=Formato immagine non valido");
+           header("Location: /login/register.php?errore=Formato immagine non valido");
            exit;
        }
 
        if($_FILES['fotoprofilo'] ['size'] > $maxsize)
        {
-           header("Location: register.php?errore=Immagine troppo grande");
+           header("Location: /login/register.php?errore=Immagine troppo grande");
            exit();
        }
 
@@ -68,7 +69,7 @@ if($_SERVER["REQUEST_METHOD"] === "POST")
 
        if(!move_uploaded_file($_FILES['fotoprofilo'] ['tmp_name'], $destination)) 
        {
-            header("Location: register.php?errore=Errore caricamento file");
+            header("Location: /login/register.php?errore=Errore caricamento file");
             exit();
        }
 
@@ -76,8 +77,8 @@ if($_SERVER["REQUEST_METHOD"] === "POST")
     }
 
     //inserimento dati persona nel db
-    $statoq = $connessione->prepare("INSERT INTO utenti (username, password, salt, bgcolor, nome, cognome,localita, fotoprofilo, email) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
-    $statoq->bind_param("sssssssss", $username, $passwordhash, $salt, $bgcolor_clean, $nome, $cognome, $localita, $foto_path, $email);
+    $statoq = $connessione->prepare("INSERT INTO utenti (username, password, salt, bgcolor, nome, cognome, localita, fotoprofilo, email, tenant_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+    $statoq->bind_param("sssssssssi", $username, $passwordhash, $salt, $bgcolor_clean, $nome, $cognome, $localita, $foto_path, $email, $tenant_id);
     $statoq->execute();
     $statoq->close();
 
@@ -104,13 +105,14 @@ if($_SERVER["REQUEST_METHOD"] === "POST")
 
     //imposta sessione
     $_SESSION['name'] = $username;
+    $_SESSION['tenant_id'] = $tenant_id;
     $_SESSION['color'] = '#' . $bgcolor_clean;
     $_SESSION['ruoli'] = [$ruolo_id];
     $_SESSION['permessi'] = $permessi;
     $_SESSION['foto']  = $foto_path;
 
 
-    header("Location: index.php?msg=Registrazione completata");
+    header("Location: /login/index.php?msg=Registrazione completata");
     exit();
 }
 else{
@@ -133,20 +135,23 @@ else{
     <style>
         body {
             background-color: #3a3a3a;
-            height: 100vh;
+            min-height: 100vh;
             display: flex;
             justify-content: center;
-            align-items: center;
-            font-family: 'Inter', sans-serif;
+            align-items: flex-start;
+            padding: 24px 14px;
+            font-family: 'Segoe UI', sans-serif;
         }
 
         .login-container {
             background: #2a2a2a;
             color: #008000;
-            padding: 40px 35px;
+            padding: 28px 24px;
             border-radius: 15px;
             box-shadow: 0 8px 25px rgba(0,0,0,0.4);
-            width: 350px;
+            width: min(920px, 100%);
+            max-height: calc(100vh - 48px);
+            overflow-y: auto;
         }
 
         .login-container h2 {
@@ -158,13 +163,33 @@ else{
         .login-container p {
             font-size: 0.9rem;
             color: #6c757d;
-            margin-bottom: 25px;
+            margin-bottom: 18px;
         }
 
-        .form-control {
-            height: 45px;
+        .form-control,
+        .form-select {
+            height: 42px;
             border-radius: 10px;
             font-size: 0.95rem;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 12px;
+        }
+
+        .field-full {
+            grid-column: 1 / -1;
+        }
+
+        .mb-3 {
+            margin-bottom: 0 !important;
+        }
+
+        .form-control-color {
+            min-height: 42px;
+            padding: 0.25rem;
         }
 
         .btn-primary {
@@ -182,7 +207,7 @@ else{
 
         .bottom-text {
             text-align: center;
-            margin-top: 20px;
+            margin-top: 16px;
             font-size: 0.9rem;
         }
 
@@ -197,6 +222,33 @@ else{
             font-size: 0.9rem;
             padding: 8px;
         }
+
+        #localita-wrapper {
+            position: relative;
+        }
+
+        #suggestions {
+            z-index: 10;
+            max-height: 180px;
+            overflow-y: auto;
+        }
+
+        @media (min-width: 768px) {
+            .form-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+        }
+
+        @media (max-width: 576px) {
+            body {
+                padding: 12px;
+            }
+
+            .login-container {
+                padding: 18px 14px;
+                max-height: calc(100vh - 24px);
+            }
+        }
     </style>
 </head>
 
@@ -210,48 +262,66 @@ else{
             <div class="alert alert-danger"><?= htmlspecialchars($_GET["errore"]); ?></div>
         <?php endif; ?>
 
-        <form action="register.php" method="POST" enctype="multipart/form-data">
+        <form action="/login/register.php" method="POST" enctype="multipart/form-data" target="_top">
+            <div class="form-grid">
+                <div class="mb-3"><input type="text" name="nome" class="form-control" placeholder="Nome" required></div>
+                <div class="mb-3"><input type="text" name="cognome" class="form-control" placeholder="Cognome" required></div>
 
-            <div class="mb-3"><input type="text" name="nome" class="form-control" placeholder="Nome" required></div>
-            <div class="mb-3"><input type="text" name="cognome" class="form-control" placeholder="Cognome" required></div>
-            <div class="mb-3">
-             <div class="input-group">
-             <span class="input-group-text">
-             <i class="bi bi-geo-alt-fill"></i>
-             </span>
-             <input type="text"
-               name="localita"
-               id="localita"
-               class="form-control"
-               placeholder="Località"
-               autocomplete="off"
-               required>
-             </div>
-             </div>
+                <div class="mb-3 field-full" id="localita-wrapper">
+                    <div class="input-group">
+                        <span class="input-group-text">
+                            <i class="bi bi-geo-alt-fill"></i>
+                        </span>
+                        <input type="text"
+                               name="localita"
+                               id="localita"
+                               class="form-control"
+                               placeholder="Localita"
+                               autocomplete="off"
+                               required>
+                    </div>
+                </div>
 
-             <div class="mb-3">
-           <input type="file"
-           name="fotoprofilo"
-           class="form-control"
-            placeholder="Foto Profilo"
-           accept="image/*">
-         </div>
+                <div class="mb-3 field-full">
+                    <input type="file"
+                           name="fotoprofilo"
+                           class="form-control"
+                           placeholder="Foto Profilo"
+                           accept="image/*">
+                </div>
 
+                <div class="mb-3"><input type="email" name="email" class="form-control" placeholder="Email" required></div>
+                <div class="mb-3"><input type="text" name="username" class="form-control" placeholder="Username" required></div>
+                <div class="mb-3 field-full"><input type="password" name="password" class="form-control" placeholder="Password" required></div>
 
-            <div class="mb-3"><input type="text" name="email" class="form-control" placeholder="Email" required></div>
-            <div class="mb-3"><input type="text" name="username" class="form-control" placeholder="Username" required></div>
-            <div class="mb-3"><input type="password" name="password" class="form-control" placeholder="Password" required></div>
-            
-            <div class="mb-3"><input type="color" name="bgcolor" class="form-control form-control-color" value="#32CD32" title="Scegli un colore"></div>
-            <div class="mb-3">
-                <select class="form-select" name="role" required>
-                    <option value="1">Admin</option>
-                    <option value="2">Moderatore</option>
-                    <option value="3" selected>Swapper</option>
-                    <option value="4">Corriere</option>
-                </select>
+                <div class="mb-3"><input type="color" name="bgcolor" class="form-control form-control-color" value="#32CD32" title="Scegli un colore"></div>
+
+                <div class="mb-3">
+                    <select class="form-select" name="role" required>
+                        <option value="1">Admin</option>
+                        <option value="2">Moderatore</option>
+                        <option value="3" selected>Swapper</option>
+                        <option value="4">Corriere</option>
+                    </select>
+                </div>
+
+                <div class="mb-3 field-full">
+                    <select class="form-select" name="tenant_id" required>
+                        <option value="">-- Scegli la tua regione --</option>
+                        <?php
+                          require_once __DIR__ . '/config/TenantManager.php';
+                          $tenants = TenantManager::get_all_tenants();
+                          foreach ($tenants as $id => $tenant) {
+                            echo "<option value=\"{$id}\">{$tenant['city']}</option>";
+                          }
+                        ?>
+                    </select>
+                </div>
+
+                <div class="field-full">
+                    <button type="submit" class="btn btn-primary w-100">REGISTRATI</button>
+                </div>
             </div>
-            <button type="submit" class="btn btn-primary w-100">REGISTRATI</button>
         </form>
 
         <div class="bottom-text">

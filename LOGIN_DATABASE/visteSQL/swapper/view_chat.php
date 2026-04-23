@@ -1,3 +1,16 @@
+<?php
+require_once __DIR__ . '/../../sessione.php';
+require_once __DIR__ . '/../../config/TenantManager.php';
+
+if (!isset($_SESSION['name']) || !isset($_SESSION['tenant_id'])) {
+  header('Location: /login/index.php?errore=SessioneScaduta');
+  exit;
+}
+
+$tenantInfo = TenantManager::get_current_tenant();
+$tenantLabel = $tenantInfo['city'] ?? ('Tenant #' . (int)$_SESSION['tenant_id']);
+?>
+
 <!doctype html>
 <html lang="it">
 <head>
@@ -26,7 +39,10 @@
       <div class="col-md-10 bg-white p-4 rounded shadow-sm" style="border-top: 5px solid #667eea;">
         
         <div class="d-flex justify-content-between align-items-center mb-4">
-          <h1 class="fw-bold"><i class="bi bi-chat-dots me-2"></i>Le Mie Chat</h1>
+          <div>
+            <h1 class="fw-bold mb-1"><i class="bi bi-chat-dots me-2"></i>Le Mie Chat</h1>
+            <span class="badge text-bg-light border">Tenant attivo: <?= htmlspecialchars($tenantLabel); ?></span>
+          </div>
           <a href="/login/visualizzaUtente.php" class="btn btn-secondary">
             <i class="bi bi-arrow-left me-1"></i>Indietro
           </a>

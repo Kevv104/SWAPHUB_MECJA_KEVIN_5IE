@@ -12,12 +12,32 @@ use Firebase\JWT\Key;
 
 /**
  * --- CONFIGURAZIONE AMBIENTE (BYPASS POSTMAN) ---
+ * Attivo solo se richiesto esplicitamente.
+ * Esempi:
+ *   /api_create_chat.php?dev_bypass=1
+ *   Header: X-Dev-Bypass: 1
  */
-$isDevelopment = true; 
+$isDevelopment = (
+    (isset($_GET['dev_bypass']) && $_GET['dev_bypass'] === '1') ||
+    (isset($_SERVER['HTTP_X_DEV_BYPASS']) && $_SERVER['HTTP_X_DEV_BYPASS'] === '1')
+);
 
 if ($isDevelopment) {
-    // In modalità test, l'autore della chat sarà 'gianno'
     $currentUser = 'gianno'; 
+    $tenantLookup = $connessione->prepare("SELECT tenant_id FROM utenti WHERE username = ?");
+    $tenantLookup->bind_param("s", $currentUser);
+    $tenantLookup->execute();
+    $tenantResult = $tenantLookup->get_result();
+    $tenantRow = $tenantResult->fetch_assoc();
+    $tenantLookup->close();
+
+    if (!$tenantRow || empty($tenantRow['tenant_id'])) {
+        http_response_code(401);
+        echo json_encode(["success" => false, "error" => "Tenant utente non trovato"]);
+        exit;
+    }
+
+    $currentTenantId = (int)$tenantRow['tenant_id'];
 } else {
     if (session_status() === PHP_SESSION_NONE) {
         session_start(['cookie_path' => '/login/']);
@@ -32,6 +52,10 @@ if ($isDevelopment) {
     try {
         $decoded = JWT::decode($_SESSION['jwt'], new Key(JWT_SECRET, JWT_ALGO));
         $currentUser = $decoded->sub;
+        $currentTenantId = isset($decoded->tenant_id) ? (int)$decoded->tenant_id : 0;
+        if(!$currentUser || $currentTenantId <= 0) {
+            throw new Exception("Token privo di tenant valido");
+        }
     } catch (Exception $e) {
         http_response_code(401);
         echo json_encode(["success" => false, "error" => "Token non valido"]);
@@ -52,7 +76,8 @@ try {
     $nomeChat    = $input['nome'] ?? ''; 
     $tipoChat    = $input['tipo'] ?? 'privata';
     $descrizione = $input['descrizione'] ?? '';
-    $partecipanti = $input['partecipanti'] ?? []; // Array di username: ["mario", "anna"]
+    $partecipanti = $input['partecipanti'] ?? [];
+    $partecipanti = array_values(array_unique(array_filter(array_map('trim', $partecipanti))));
 
     // Validazione input
     if(empty($nomeChat)) {
@@ -65,6 +90,40 @@ try {
         exit;
     }
 
+    if(in_array($currentUser, $partecipanti, true)) {
+        echo json_encode(["success" => false, "error" => "Non puoi invitare te stesso nella stessa chat"]);
+        exit;
+    }
+
+    $checkAuthor = $connessione->prepare("SELECT 1 FROM utenti WHERE username = ? AND tenant_id = ?");
+    $checkAuthor->bind_param("si", $currentUser, $currentTenantId);
+    $checkAuthor->execute();
+    $checkAuthor->store_result();
+    if($checkAuthor->num_rows === 0) {
+        $checkAuthor->close();
+        http_response_code(403);
+        echo json_encode(["success" => false, "error" => "Utente non autorizzato per questo tenant"]);
+        exit;
+    }
+    $checkAuthor->close();
+
+    $checkPartecipante = $connessione->prepare("SELECT 1 FROM utenti WHERE username = ? AND tenant_id = ?");
+    foreach($partecipanti as $usernamePartecipante) {
+        $checkPartecipante->bind_param("si", $usernamePartecipante, $currentTenantId);
+        $checkPartecipante->execute();
+        $checkPartecipante->store_result();
+        if($checkPartecipante->num_rows === 0) {
+            $checkPartecipante->close();
+            echo json_encode([
+                "success" => false,
+                "error" => "L'utente {$usernamePartecipante} non appartiene al tuo tenant"
+            ]);
+            exit;
+        }
+        $checkPartecipante->free_result();
+    }
+    $checkPartecipante->close();
+
     // Il numero totale è il numero di invitati + l'utente corrente
     $numPartecipanti = count($partecipanti) + 1;
 
@@ -73,28 +132,28 @@ try {
 
     // 1. Inserimento nella tabella Chat
     $insertChat = $connessione->prepare("
-        INSERT INTO Chat (nome, stato, numPartecipanti, descrizione, tipoChat, idScambio)
-        VALUES (?, 'attiva', ?, ?, ?, NULL)
+        INSERT INTO Chat (tenant_id, nome, stato, numPartecipanti, descrizione, tipoChat, idScambio)
+        VALUES (?, ?, 'attiva', ?, ?, ?, NULL)
     ");
 
-    $insertChat->bind_param("siss", $nomeChat, $numPartecipanti, $descrizione, $tipoChat);
+    $insertChat->bind_param("isiss", $currentTenantId, $nomeChat, $numPartecipanti, $descrizione, $tipoChat);
     $insertChat->execute();
 
     $idChatCreata = $connessione->insert_id;
 
     // 2. Inserimento partecipanti nella tabella di collegamento PartecipaChat
     $insertPartecipante = $connessione->prepare("
-        INSERT INTO PartecipaChat (idChat, User)
-        VALUES (?, ?)
+        INSERT INTO PartecipaChat (idChat, tenant_id, User)
+        VALUES (?, ?, ?)
     ");
 
     // Aggiungiamo l'utente corrente (l'autore)
-    $insertPartecipante->bind_param("is", $idChatCreata, $currentUser);
+    $insertPartecipante->bind_param("iis", $idChatCreata, $currentTenantId, $currentUser);
     $insertPartecipante->execute();
 
     // Aggiungiamo gli altri utenti passati nell'array
     foreach($partecipanti as $username) {
-        $insertPartecipante->bind_param("is", $idChatCreata, $username);
+        $insertPartecipante->bind_param("iis", $idChatCreata, $currentTenantId, $username);
         $insertPartecipante->execute();
     }
 
@@ -104,6 +163,7 @@ try {
     echo json_encode([
         "success"           => true,
         "currentUser_debug" => $currentUser,
+        "tenant_debug"      => $currentTenantId,
         "idChat"            => $idChatCreata,
         "messaggio"         => "Chat creata con successo!"
     ]);

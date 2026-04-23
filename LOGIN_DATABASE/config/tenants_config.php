@@ -20,6 +20,7 @@
         17 => ['id' => 17, 'name' => 'calabria', 'city' => 'Calabria'],
         18 => ['id' => 18, 'name' => 'sicilia', 'city' => 'Sicilia'],
         19 => ['id' => 19, 'name' => 'sardegna', 'city' => 'Sardegna'],
+        20 => ['id' => 20, 'name' => 'trentino_alto_adige', 'city' => 'Trentino-Alto Adige'],
     ],
 ];
 

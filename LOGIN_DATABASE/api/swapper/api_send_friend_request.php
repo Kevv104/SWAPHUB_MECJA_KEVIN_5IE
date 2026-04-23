@@ -14,10 +14,24 @@ use Firebase\JWT\Key;
 /**
  * --- CONFIGURAZIONE AMBIENTE (BYPASS POSTMAN) ---
  */
-$isDevelopment = true; 
+$isDevelopment = false; 
 
 if ($isDevelopment) {
     $currentUser = 'gianno'; 
+    $tenantLookup = $connessione->prepare("SELECT tenant_id FROM utenti WHERE username = ?");
+    $tenantLookup->bind_param("s", $currentUser);
+    $tenantLookup->execute();
+    $tenantResult = $tenantLookup->get_result();
+    $tenantRow = $tenantResult->fetch_assoc();
+    $tenantLookup->close();
+
+    if (!$tenantRow || empty($tenantRow['tenant_id'])) {
+        http_response_code(401);
+        echo json_encode(["success" => false, "error" => "Tenant utente non trovato"]);
+        exit;
+    }
+
+    $currentTenantId = (int)$tenantRow['tenant_id'];
 } else {
     session_start(['cookie_path' => '/login/']);
     if(!isset($_SESSION['jwt'])) {
@@ -28,6 +42,10 @@ if ($isDevelopment) {
     try {
         $decoded = JWT::decode($_SESSION['jwt'], new Key(JWT_SECRET, JWT_ALGO));
         $currentUser = $decoded->sub;
+        $currentTenantId = isset($decoded->tenant_id) ? (int)$decoded->tenant_id : 0;
+        if(!$currentUser || $currentTenantId <= 0) {
+            throw new Exception("Token privo di tenant valido");
+        }
     } catch (Exception $e) {
         http_response_code(401);
         echo json_encode(["success" => false, "error" => "Token non valido"]);
@@ -58,7 +76,7 @@ try {
     }
 
     // 1. Verifica se l'utente destinatario esiste
-    $checkUser = $connessione->prepare("SELECT username FROM utenti WHERE username = ?");
+    $checkUser = $connessione->prepare("SELECT username, tenant_id FROM utenti WHERE username = ?");
     $checkUser->bind_param("s", $userRicevente);
     $checkUser->execute();
     $resultUser = $checkUser->get_result();
@@ -68,6 +86,14 @@ try {
         $checkUser->close();
         exit;
     }
+
+    $userRiceventeData = $resultUser->fetch_assoc();
+    if ((int)$userRiceventeData['tenant_id'] !== $currentTenantId) {
+        echo json_encode(["success" => false, "error" => "Puoi inviare richieste solo a utenti del tuo tenant"]);
+        $checkUser->close();
+        exit;
+    }
+
     $checkUser->close();
       
     // 2. Verifica se esiste già una richiesta tra i due (inviata o accettata)
@@ -116,6 +142,7 @@ try {
             'idRichiesta' => $idRichiesta,
             'userMittente' => $currentUser,
             'userDestinatario' => $userRicevente,
+            'tenant_id' => $currentTenantId,
             'stato' => 'inviata',
             'dataRichiesta' => $dataRichiesta
         ]

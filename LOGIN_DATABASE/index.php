@@ -136,21 +136,6 @@
                    <input type="password" name="password" class="form-control" placeholder="Password" required>
                 </div>
 
-                  <!-- 🆕 DROPDOWN TENANT -->
-                  <div class="mb-3">
-                    <select name="tenant_id" id="tenant_id" class="form-control" required>
-                      <option value="">-- Scegli la tua città --</option>
-                      <?php
-                        require_once __DIR__ . '/config/TenantManager.php';
-                        $tenants = TenantManager::get_all_tenants();
-                        foreach ($tenants as $id => $tenant) {
-                          echo "<option value=\"{$id}\">{$tenant['city']}</option>";
-                        }
-                      ?>
-                    </select>
-                    <small class="form-text text-muted">Se non trovi la tua città, contatta l'amministratore</small>
-                  </div>
-
                 
                     <input class = "btn btn-primary w-100 me-2" type = "submit" value = "EFFETTUA LOGIN"/>
                 </form>

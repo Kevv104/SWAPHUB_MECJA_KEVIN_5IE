@@ -16,27 +16,21 @@ if($_SERVER["REQUEST_METHOD"] === "POST")
 {
     $username = trim($_POST["username"] ?? "");
     $password = trim($_POST["password"] ?? "");
-    $tenant_id = isset($_POST['tenant_id']) ? (int)$_POST['tenant_id'] : null;
 
-    if(empty($username) || empty($password) || !$tenant_id)
+    if(empty($username) || empty($password))
     {
         header("Location:index.php?errore=Compila");
         exit();
     }
 
-    if (!TenantManager::validate_tenant_id($tenant_id)) {
-        header("Location:index.php?errore=Tenant non valido");
-        exit();
-    }
-
-    $statoq = $connessione->prepare("SELECT password, salt, bgcolor FROM utenti WHERE username = ? AND tenant_id = ?");
-    $statoq->bind_param("si", $username, $tenant_id);
+    $statoq = $connessione->prepare("SELECT password, salt, bgcolor, tenant_id FROM utenti WHERE username = ?");
+    $statoq->bind_param("s", $username);
     $statoq->execute();
     $statoq->store_result();
 
     if($statoq->num_rows == 1)
     {
-        $statoq->bind_result($db_password, $dbsalt, $bgcolor);
+        $statoq->bind_result($db_password, $dbsalt, $bgcolor, $tenant_id);
         $statoq->fetch();
 
         $inputhash = hash('sha256', $password . $dbsalt . PEPPER);

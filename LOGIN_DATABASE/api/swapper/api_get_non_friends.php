@@ -14,11 +14,24 @@ use Firebase\JWT\Key;
 /**
  * --- CONFIGURAZIONE AMBIENTE (BYPASS POSTMAN) ---
  */
-$isDevelopment = true; 
+$isDevelopment = false; 
 
 if ($isDevelopment) {
-    // In modalità test, cerchiamo gli utenti che NON sono amici di 'gianno'
     $currentUser = 'gianno'; 
+    $tenantLookup = $connessione->prepare("SELECT tenant_id FROM utenti WHERE username = ?");
+    $tenantLookup->bind_param("s", $currentUser);
+    $tenantLookup->execute();
+    $tenantResult = $tenantLookup->get_result();
+    $tenantRow = $tenantResult->fetch_assoc();
+    $tenantLookup->close();
+
+    if (!$tenantRow || empty($tenantRow['tenant_id'])) {
+        http_response_code(401);
+        echo json_encode(["success" => false, "error" => "Tenant utente non trovato"]);
+        exit;
+    }
+
+    $currentTenantId = (int)$tenantRow['tenant_id'];
 } else {
     if (session_status() === PHP_SESSION_NONE) {
         session_start(['cookie_path' => '/login/']);
@@ -33,6 +46,10 @@ if ($isDevelopment) {
     try {
         $decoded = JWT::decode($_SESSION['jwt'], new Key(JWT_SECRET, JWT_ALGO));
         $currentUser = $decoded->sub;
+        $currentTenantId = isset($decoded->tenant_id) ? (int)$decoded->tenant_id : 0;
+        if(!$currentUser || $currentTenantId <= 0) {
+            throw new Exception("Token privo di tenant valido");
+        }
     } catch (Exception $e) {
         http_response_code(401);
         echo json_encode(["success" => false, "error" => "Token non valido"]);
@@ -57,6 +74,7 @@ try {
             u.localita
         FROM utenti u
         WHERE u.username != ?
+        AND u.tenant_id = ?
         AND u.username NOT IN (
             -- Utenti a cui hai inviato richiesta (inviata o accettata)
             SELECT UserDestinatario 
@@ -74,7 +92,7 @@ try {
     ");
 
     // Passiamo 3 volte $currentUser (per lo username principale e le due subquery)
-    $query->bind_param("sss", $currentUser, $currentUser, $currentUser);
+    $query->bind_param("siss", $currentUser, $currentTenantId, $currentUser, $currentUser);
     $query->execute();
     $result = $query->get_result();
 
@@ -93,6 +111,7 @@ try {
     echo json_encode([
         "success" => true,
         "currentUser_debug" => $currentUser,
+        "tenant_debug" => $currentTenantId,
         "utenti" => $utenti,
         "totalUtenti" => count($utenti)
     ]);
