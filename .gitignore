@@ -4,6 +4,7 @@ LOGIN_DATABASE/connectdb.php
 LOGIN_DATABASE/vendor
 cloudflared-linux-amd64.deb
 LOGIN_DATABASE/start_mqtt.sh
+GUIDA_MULTI_TENANCY_SENZA_SOTTODOMINI.md
 
 install.sh
 pubblica.sh
