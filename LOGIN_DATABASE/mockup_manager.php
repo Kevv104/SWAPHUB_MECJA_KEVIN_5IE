@@ -67,7 +67,9 @@
                  exit;
 
                  //PRODOTTI
-                 case 'upload_product': echo "<h3>Carica Prodotto</h3>Sezione caricamento prodotto</p>"; break;
+                 case 'upload_product': 
+                 include 'visteSQL/swapper/manage_products.php';
+                 exit;
                  case 'send_trade_request': echo "<h3>Invia Scambio</h3><p>Invio in corso...</p>"; break;
                  case 'write_review': echo "<h3>Scrivi Recensione</h3><p>Sezione per scrivere recensioni prodotto.</p>"; break;
                  case 'edit_account': echo "<h3>Modifica Account</h3><p>Sezione di modifica impostazioni personali.</p>"; break;

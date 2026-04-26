@@ -76,6 +76,7 @@ if($_SERVER["REQUEST_METHOD"] === "POST")
     }
 
     //inserimento dati persona nel db
+    $localita = substr($localita, 0, 100); //limita la lunghezza della localita
     $statoq = $connessione->prepare("INSERT INTO utenti (username, password, salt, bgcolor, nome, cognome,localita, fotoprofilo, email) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
     $statoq->bind_param("sssssssss", $username, $passwordhash, $salt, $bgcolor_clean, $nome, $cognome, $localita, $foto_path, $email);
     $statoq->execute();
@@ -133,20 +134,28 @@ else{
     <style>
         body {
             background-color: #3a3a3a;
-            height: 100vh;
+            min-height: 100vh;
             display: flex;
             justify-content: center;
             align-items: center;
             font-family: 'Inter', sans-serif;
+            padding: 20px;
+        }
+
+        main {
+            width: 100%;
+            display: flex;
+            justify-content: center;
         }
 
         .login-container {
             background: #2a2a2a;
-            color: #008000;
+            color: #008000; 
             padding: 40px 35px;
             border-radius: 15px;
             box-shadow: 0 8px 25px rgba(0,0,0,0.4);
-            width: 350px;
+            width: 100%;
+            max-width: 350px;
         }
 
         .login-container h2 {
@@ -196,6 +205,26 @@ else{
             text-align: center;
             font-size: 0.9rem;
             padding: 8px;
+        }
+
+        @media (max-width: 576px) {
+            .login-container {
+                padding: 25px 20px;
+                max-width: 100%;
+            }
+
+            .login-container h2 {
+                font-size: 1.3rem;
+            }
+
+            .form-control {
+                height: 42px;
+                font-size: 0.9rem;
+            }
+
+            .btn-primary {
+                height: 42px;
+            }
         }
     </style>
 </head>
