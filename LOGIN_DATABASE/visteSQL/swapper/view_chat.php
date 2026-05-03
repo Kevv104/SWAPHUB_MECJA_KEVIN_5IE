@@ -128,52 +128,40 @@
     }
 
     .message-actions {
-      display: none;
-      position: absolute;
-      right: -80px;
-      top: 0;
-      background: white;
-      border: 1px solid #dee2e6;
-      border-radius: 0.5rem;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-    }
-
-    .message-own:hover .message-actions {
       display: flex;
       gap: 0.25rem;
+      justify-content: flex-end;
+      margin-bottom: 0.35rem;
+      background: rgba(255, 255, 255, 0.9);
+      border: 1px solid #dee2e6;
+      border-radius: 999px;
+      padding: 0.2rem;
+      width: fit-content;
+      margin-left: auto;
     }
 
     .message-actions button {
-      padding: 0.25rem 0.5rem;
-      font-size: 0.75rem;
+      width: 28px;
+      height: 28px;
+      padding: 0;
+      font-size: 0.8rem;
       border: none;
       background: none;
       cursor: pointer;
       color: #667eea;
       transition: color 0.2s;
+      border-radius: 50%;
     }
 
     .message-actions button:hover {
       color: #4c51bf;
+      background-color: #eef1ff;
     }
 
-    /* Su touch/mobile non c'e' hover: mostriamo sempre le azioni sui messaggi propri */
-    @media (hover: none), (max-width: 768px) {
-      .message-own .message-actions {
-        display: flex;
-        position: static;
-        margin-bottom: 0.35rem;
-        justify-content: flex-end;
-        background: transparent;
-        border: 0;
-        box-shadow: none;
-      }
-
-      .message-own .message-content {
-        display: flex;
-        flex-direction: column;
-        align-items: flex-end;
-      }
+    .message-own .message-content {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
     }
 
     .messages-input-area {
@@ -343,12 +331,28 @@
     let editingMessageId = null;
 
     /**
+     * PARSE DATE DA MYSQL (UTC -> locale browser)
+     */
+    function parseServerDate(dateString) {
+      if (!dateString) return null;
+
+      // MySQL tipico: "YYYY-MM-DD HH:mm:ss"
+      // Lo interpretiamo come UTC per evitare offset -2h in Italia.
+      const normalized = dateString.includes('T')
+        ? dateString
+        : dateString.replace(' ', 'T');
+
+      return new Date(`${normalized}Z`);
+    }
+
+    /**
      * FORMAT DATE
      */
     function formatDate(dateString) {
       if (!dateString) return 'Mai';
       
-      const date = new Date(dateString);
+      const date = parseServerDate(dateString);
+      if (!date || Number.isNaN(date.getTime())) return 'Data non valida';
       const now = new Date();
       const diffMs = now - date;
       const diffMins = Math.floor(diffMs / 60000);
@@ -373,7 +377,8 @@
      */
     function formatTime(dateString) {
       if (!dateString) return '';
-      const date = new Date(dateString);
+      const date = parseServerDate(dateString);
+      if (!date || Number.isNaN(date.getTime())) return '';
       return date.toLocaleTimeString('it-IT', { 
         hour: '2-digit',
         minute: '2-digit'
