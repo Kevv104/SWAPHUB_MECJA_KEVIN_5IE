@@ -133,10 +133,10 @@
      */
     function acceptRequest(idRichiesta, nomeCognome, cardElement) {
         const btnAccept = cardElement.querySelector('.btn-accept');
-        const btnReject = cardElement.querySelector('.btn-reject');
+      const btnReject = cardElement.querySelector('.btn-reject');
 
         btnAccept.disabled = true;
-        btnReject.disabled = true;
+      btnReject.disabled = true;
         btnAccept.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>...';
 
         fetch('/login/api/swapper/api_accept_friend_request.php', {
@@ -160,15 +160,15 @@
         .catch(err => {
             alert(err.message);
             btnAccept.disabled = false;
-            btnReject.disabled = false;
+          btnReject.disabled = false;
             btnAccept.innerHTML = '<i class="bi bi-check-circle me-1"></i>Accetta';
         });
     }
 
-    /**
-     * Funzione per RIFIUTARE una richiesta
-     */
-    function rejectRequest(idRichiesta, nomeCognome, cardElement) {
+      /**
+       * Funzione per RIFIUTARE una richiesta
+       */
+      function rejectRequest(idRichiesta, nomeCognome, cardElement) {
         if (!confirm(`Vuoi davvero rifiutare la richiesta di ${nomeCognome}?`)) return;
 
         const btnAccept = cardElement.querySelector('.btn-accept');
@@ -178,24 +178,24 @@
         btnReject.disabled = true;
 
         fetch('/login/api/swapper/api_reject_friend_request.php', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            credentials: 'include',
-            body: JSON.stringify({ idRichiesta: idRichiesta })
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ idRichiesta: idRichiesta })
         })
         .then(res => res.json())
         .then(data => {
-            if (data.success) {
-                cardElement.remove();
-                updateCounter();
-            } else {
-                alert("Errore: " + data.error);
-                btnAccept.disabled = false;
-                btnReject.disabled = false;
-            }
+          if (data.success) {
+            cardElement.remove();
+            updateCounter();
+          } else {
+            alert("Errore: " + data.error);
+            btnAccept.disabled = false;
+            btnReject.disabled = false;
+          }
         })
         .catch(err => console.error("Errore di rete:", err));
-    }
+      }
 
     /**
      * Aggiorna il contatore visivo delle richieste
@@ -258,10 +258,10 @@
                                             onclick="acceptRequest(${req.idRichiesta}, '${req.Nome} ${req.Cognome}', this.closest('.card'))">
                                         <i class="bi bi-check-circle me-1"></i>Accetta
                                     </button>
-                                    <button class="btn btn-outline-danger btn-sm btn-reject" 
-                                            onclick="rejectRequest(${req.idRichiesta}, '${req.Nome} ${req.Cognome}', this.closest('.card'))">
-                                        <i class="bi bi-x-circle me-1"></i>Rifiuta
-                                    </button>
+                                  <button class="btn btn-outline-danger btn-sm btn-reject" 
+                                      onclick="rejectRequest(${req.idRichiesta}, '${req.Nome} ${req.Cognome}', this.closest('.card'))">
+                                    <i class="bi bi-x-circle me-1"></i>Rifiuta
+                                  </button>
                                 </div>
                             </div>
                         </div>

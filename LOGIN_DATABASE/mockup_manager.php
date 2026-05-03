@@ -52,11 +52,9 @@
                  include 'visteSQL/swapper/send_friend_request.php';
                  exit;
 
-                 case 'accept_friend_request': 
+                 case 'manage_friend_request': 
                  include 'visteSQL/swapper/accept_friend_request.php';
                  exit;
-                 
-                 case 'reject_friend_request': echo "<h3>Rifiuta amicizia</h3><p>Amicizia rifiutata.</p>"; break;
                  
                  case 'subscribe_swapplus': 
                  include 'visteSQL/swapper/subscribe_swapplus.php';
@@ -67,10 +65,11 @@
                  exit;
 
                  //PRODOTTI
-                 case 'upload_product': 
+                 case 'manage_products': 
                  include 'visteSQL/swapper/manage_products.php';
                  exit;
                  case 'send_trade_request': echo "<h3>Invia Scambio</h3><p>Invio in corso...</p>"; break;
+                 case 'manage_trade_request': echo "<h3>Gestisci Scambi</h3><p>Sezione gestione richieste di scambio.</p>"; break;
                  case 'write_review': echo "<h3>Scrivi Recensione</h3><p>Sezione per scrivere recensioni prodotto.</p>"; break;
                  case 'edit_account': echo "<h3>Modifica Account</h3><p>Sezione di modifica impostazioni personali.</p>"; break;
                  case 'send_report': echo "<h3>Invia Segnalazione</h3><p>Invio segnalazione in corso...</p>"; break;

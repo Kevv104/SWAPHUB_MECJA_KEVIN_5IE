@@ -9,6 +9,21 @@ require_once 'jwt.php';
 use Firebase\JWT\JWT;
 use Firebase\JWT\Key;
 
+function normalizzaPermesso(string $permesso): ?string
+{
+    $mappa = [
+        'upload_product' => 'manage_products',
+        'accept_friend_request' => 'manage_friend_request',
+        'reject_friend_request' => null,
+    ];
+
+    if (array_key_exists($permesso, $mappa)) {
+        return $mappa[$permesso];
+    }
+
+    return $permesso;
+}
+
 
 
 if($_SERVER["REQUEST_METHOD"] === "POST") 
@@ -60,7 +75,11 @@ if($_SERVER["REQUEST_METHOD"] === "POST")
                           WHERE rp.idRuolo IN ($ids)"; //seleziono una volta ruoli con lo stesso permesso, join tra tabella permesso e tabella RuoloPermesso, where specifica solo i permessi che appartengono al id del utente loggato
                 $result = $connessione->query($query); //connessione al db
                 while($row = $result->fetch_assoc()) { //ciclo tra i risultati della query
-                    $permessi[] = $row['nomePermesso']; // per aggiungere al array i nomi permessi trovati 
+                    $permessoNormalizzato = normalizzaPermesso($row['nomePermesso']);
+
+                    if ($permessoNormalizzato !== null) {
+                        $permessi[] = $permessoNormalizzato; // per aggiungere al array i nomi permessi trovati 
+                    }
                 }
             }
 

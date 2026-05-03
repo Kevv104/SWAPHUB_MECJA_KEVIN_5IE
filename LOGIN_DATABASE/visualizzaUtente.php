@@ -21,6 +21,7 @@
   $statoq->close();
 
   $bgcolor = '#' . ltrim($bgcolor, '#');
+
 ?>
 <!doctype html>
 <html lang="it">
@@ -131,7 +132,7 @@
 
                         let tdNome = document.createElement('td');
                         tdNome.className = "text-dark fw-bold";
-                        tdNome.textContent = p;
+                        tdNome.innerHTML = `<span class="font-monospace text-dark">${p}</span>`;
                         
                        
                         let tdAzione = document.createElement('td');
