@@ -90,7 +90,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
     
     // Verifica che il prodotto appartenga all'utente
-    $verificaQuery = "SELECT User, img FROM Prodotto WHERE idProdotto = ?";
+    $verificaQuery = "SELECT username, img FROM vista_prodotti WHERE idProdotto = ?";
     $verificaStmt = $connessione->prepare($verificaQuery);
     $verificaStmt->bind_param("i", $idProdotto);
     $verificaStmt->execute();
@@ -103,7 +103,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     $prodottoEsistente = $verificaResult->fetch_assoc();
-    if ($prodottoEsistente['User'] !== $username) {
+    if ($prodottoEsistente['username'] !== $username) {
         http_response_code(403);
         echo json_encode(['success' => false, 'message' => 'Non autorizzato']);
         exit;

@@ -49,9 +49,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
                 dataPubblicazione,
                 img,
                 NomeCategoria,
-                User as username
-            FROM Prodotto
-            WHERE User = ?
+                username,
+                nomeUtente,
+                cognomeUtente
+            FROM vista_prodotti
+            WHERE username = ?
             ORDER BY dataPubblicazione DESC
         ";
         
