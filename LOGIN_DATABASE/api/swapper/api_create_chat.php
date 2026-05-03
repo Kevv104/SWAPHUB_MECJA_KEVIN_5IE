@@ -65,11 +65,75 @@ try {
         exit;
     }
 
+    // Regola ruoli: se l'utente corrente e' Swapper, puo' invitare solo altri Swapper
+    $queryRoleCurrent = $connessione->prepare("
+        SELECT r.nomeRuolo
+        FROM UtenteRuolo ur
+        INNER JOIN Ruolo r ON r.idRuolo = ur.idRuolo
+        WHERE ur.username = ?
+        LIMIT 1
+    ");
+    $queryRoleCurrent->bind_param("s", $currentUser);
+    $queryRoleCurrent->execute();
+    $resultRoleCurrent = $queryRoleCurrent->get_result();
+    $rowRoleCurrent = $resultRoleCurrent->fetch_assoc();
+    $currentRole = $rowRoleCurrent['nomeRuolo'] ?? null;
+    $queryRoleCurrent->close();
+
+    if ($currentRole === 'Swapper') {
+        $notSwapperFound = false;
+
+        $queryRoleParticipant = $connessione->prepare("
+            SELECT r.nomeRuolo
+            FROM UtenteRuolo ur
+            INNER JOIN Ruolo r ON r.idRuolo = ur.idRuolo
+            WHERE ur.username = ?
+            LIMIT 1
+        ");
+
+        foreach($partecipanti as $username) {
+            $queryRoleParticipant->bind_param("s", $username);
+            $queryRoleParticipant->execute();
+            $resultRoleParticipant = $queryRoleParticipant->get_result();
+            $rowRoleParticipant = $resultRoleParticipant->fetch_assoc();
+            $participantRole = $rowRoleParticipant['nomeRuolo'] ?? null;
+
+            if ($participantRole !== 'Swapper') {
+                $notSwapperFound = true;
+                break;
+            }
+        }
+
+        $queryRoleParticipant->close();
+
+        if ($notSwapperFound) {
+            http_response_code(403);
+            echo json_encode([
+                "success" => false,
+                "error" => "Uno swapper puo' creare chat solo con altri swapper"
+            ]);
+            exit;
+        }
+    }
+
     // Il numero totale è il numero di invitati + l'utente corrente
     $numPartecipanti = count($partecipanti) + 1;
 
     // --- INIZIO TRANSAZIONE ---
     $connessione->begin_transaction();
+
+    // Tabella dedicata al proprietario della chat (creatore)
+    $connessione->query(" 
+        CREATE TABLE IF NOT EXISTS ChatOwner (
+            idChat INT(11) NOT NULL,
+            creator VARCHAR(50) NOT NULL,
+            createdAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            PRIMARY KEY (idChat),
+            KEY creator (creator),
+            CONSTRAINT fk_chatowner_chat FOREIGN KEY (idChat) REFERENCES Chat(idChat) ON DELETE CASCADE,
+            CONSTRAINT fk_chatowner_creator FOREIGN KEY (creator) REFERENCES utenti(username) ON DELETE CASCADE
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci
+    ");
 
     // 1. Inserimento nella tabella Chat
     $insertChat = $connessione->prepare("
@@ -81,6 +145,14 @@ try {
     $insertChat->execute();
 
     $idChatCreata = $connessione->insert_id;
+
+    // 1b. Salva il creatore della chat
+    $insertOwner = $connessione->prepare("
+        INSERT INTO ChatOwner (idChat, creator)
+        VALUES (?, ?)
+    ");
+    $insertOwner->bind_param("is", $idChatCreata, $currentUser);
+    $insertOwner->execute();
 
     // 2. Inserimento partecipanti nella tabella di collegamento PartecipaChat
     $insertPartecipante = $connessione->prepare("
@@ -109,6 +181,7 @@ try {
     ]);
 
     $insertChat->close();
+    $insertOwner->close();
     $insertPartecipante->close();
     $connessione->close();
 

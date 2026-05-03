@@ -37,18 +37,51 @@ if ($isDevelopment) {
 }
 
 try {
-    // Query per prendere tutti gli utenti tranne quello loggato
-    $query = $connessione->prepare("
-        SELECT 
-            username,
-            Nome,
-            Cognome,
-            Email,
-            fotoprofilo
-        FROM utenti
-        WHERE username != ?
-        ORDER BY Nome, Cognome
+    // Determina il ruolo dell'utente corrente
+    $queryRole = $connessione->prepare("
+        SELECT r.nomeRuolo
+        FROM UtenteRuolo ur
+        INNER JOIN Ruolo r ON r.idRuolo = ur.idRuolo
+        WHERE ur.username = ?
+        LIMIT 1
     ");
+    $queryRole->bind_param("s", $currentUser);
+    $queryRole->execute();
+    $resultRole = $queryRole->get_result();
+    $rowRole = $resultRole->fetch_assoc();
+    $currentRole = $rowRole['nomeRuolo'] ?? null;
+    $queryRole->close();
+
+    // Se l'utente corrente e' Swapper, mostra solo altri utenti Swapper
+    if ($currentRole === 'Swapper') {
+        $query = $connessione->prepare("
+            SELECT 
+                u.username,
+                u.Nome,
+                u.Cognome,
+                u.Email,
+                u.fotoprofilo
+            FROM utenti u
+            INNER JOIN UtenteRuolo ur ON ur.username = u.username
+            INNER JOIN Ruolo r ON r.idRuolo = ur.idRuolo
+            WHERE u.username != ?
+              AND r.nomeRuolo = 'Swapper'
+            ORDER BY u.Nome, u.Cognome
+        ");
+    } else {
+        // Per gli altri ruoli mantiene comportamento attuale
+        $query = $connessione->prepare("
+            SELECT 
+                username,
+                Nome,
+                Cognome,
+                Email,
+                fotoprofilo
+            FROM utenti
+            WHERE username != ?
+            ORDER BY Nome, Cognome
+        ");
+    }
 
     $query->bind_param("s", $currentUser);
     $query->execute();
@@ -68,6 +101,7 @@ try {
     echo json_encode([
         "success"           => true,
         "currentUser_debug" => $currentUser,
+        "currentRole_debug" => $currentRole,
         "utenti"            => $utenti,
         "totalUtenti"       => count($utenti)
     ]);

@@ -38,13 +38,15 @@
                  include 'visteSQL/swapper/create_chat.php';
                  exit;
 
-                 case 'send_message': echo "<h3>Invia messaggio</h3><p>sezione per scrivere il messaggio.</p>"; break;
-
-                 case 'view_chat': 
-                 include 'visteSQL/swapper/view_chat.php';
+                 case 'manage_chat':
+                 header('Location: /login/visteSQL/swapper/view_chat.php');
                  exit;
-                 
-                 case 'delete_own_message': echo "<h3>Elimina messaggio</h3><p>Eliminazione in corso...</p>"; break;
+
+                 // Compatibilita' retroattiva su vecchi link
+                 case 'view_chat':
+                 header('Location: /login/visteSQL/swapper/view_chat.php');
+                 exit;
+
                  case 'moderate_chat': echo "<h3>Modera chat</h3><p>Sezione moderazione chat.</p>"; break;
                 
                  //SOCIAL
