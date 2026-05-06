@@ -4,6 +4,23 @@
 require_once 'connectdb.php'; //configurazione per db
 require_once 'config.php'; //importazione chiave pepper da file config.php
 
+// SETUP: Inizializza cartelle necessarie con permessi corretti
+function initializeUploadDirs() {
+    $base_dir = __DIR__;
+    $dirs = [
+        $base_dir . '/uploads',
+        $base_dir . '/uploads/profile'
+    ];
+    
+    foreach($dirs as $dir) {
+        if(!is_dir($dir)) {
+            @mkdir($dir, 0777, true);
+        }
+        @chmod($dir, 0777);
+    }
+}
+initializeUploadDirs();
+
 if($_SERVER["REQUEST_METHOD"] === "POST")
 {
     $nome = trim($_POST['nome']);
@@ -43,36 +60,54 @@ if($_SERVER["REQUEST_METHOD"] === "POST")
 
     $foto_path = 'uploads/profile/default.png';
 
-    if(isset($_FILES['fotoprofilo']) && $_FILES['fotoprofilo'] ['error'] === 0) 
+    if(isset($_FILES['fotoprofilo']) && $_FILES['fotoprofilo']['error'] === 0) 
     {
-       $tipiconsentiti = ['image/jpeg', 'image/png', 'image/webp' , 'image/pjpeg'];
-       $maxsize = 2 * 1024  * 1024;
+       $tipiconsentiti = ['image/jpeg', 'image/png', 'image/webp', 'image/pjpeg'];
+       $maxsize = 2 * 1024 * 1024;
 
-        $mime = mime_content_type($_FILES['fotoprofilo']['tmp_name']);
+       $finfo = finfo_open(FILEINFO_MIME_TYPE);
+       $mime = finfo_file($finfo, $_FILES['fotoprofilo']['tmp_name']);
+       finfo_close($finfo);
 
        if(!in_array($mime, $tipiconsentiti)) 
        {
-           header("Location: register.php?errore=Formato immagine non valido");
+           header("Location: register.php?errore=Formato immagine non valido. Accettate: JPEG, PNG, WebP");
            exit;
        }
 
-       if($_FILES['fotoprofilo'] ['size'] > $maxsize)
+       if($_FILES['fotoprofilo']['size'] > $maxsize)
        {
-           header("Location: register.php?errore=Immagine troppo grande");
+           header("Location: register.php?errore=Immagine troppo grande (max 2MB)");
            exit();
        }
 
-       $ext = pathinfo($_FILES['fotoprofilo']['name'], PATHINFO_EXTENSION);
-       $filename = uniqid("profile_"). '.' . $ext;
-       $destination = 'uploads/profile/' . $filename;
-
-       if(!move_uploaded_file($_FILES['fotoprofilo'] ['tmp_name'], $destination)) 
-       {
-            header("Location: register.php?errore=Errore caricamento file");
-            exit();
+       $upload_dir = __DIR__ . '/uploads/profile';
+       
+       // Assicura che le cartelle esistano e siano scrivibili
+       if(!is_dir($upload_dir)) {
+           @mkdir($upload_dir, 0777, true);
+       }
+       @chmod($upload_dir, 0777);
+       
+       // Se ancora non scrivibile, tenta con parent
+       if(!is_writable($upload_dir)) {
+           @chmod(dirname($upload_dir), 0777);
+           @chmod($upload_dir, 0777);
        }
 
-         $foto_path = $destination;
+       $ext = strtolower(pathinfo($_FILES['fotoprofilo']['name'], PATHINFO_EXTENSION));
+       $filename = uniqid("profile_") . '.' . $ext;
+       $destination = $upload_dir . '/' . $filename;
+
+       // Tenta il caricamento
+       if(move_uploaded_file($_FILES['fotoprofilo']['tmp_name'], $destination)) {
+           // Assicura che il file caricato sia leggibile
+           @chmod($destination, 0666);
+           $foto_path = 'uploads/profile/' . $filename;
+       } else {
+           // Se fallisce, usa default
+           $foto_path = 'uploads/profile/default.png';
+       }
     }
 
     //inserimento dati persona nel db
