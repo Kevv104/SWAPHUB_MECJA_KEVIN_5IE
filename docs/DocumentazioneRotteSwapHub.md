@@ -178,6 +178,67 @@ Utente → mockup_manager.php?azione=PERMESSO → Vista → API → VIEW SQL →
 - **Input**: idChat, azione (elimina_messaggio/chiudi_chat)
 - **Output**: Successo/errore
 
+ - **Output**: Successo/errore
+
+ ---
+
+### **Rotte chat aggiuntive (non presenti nella versione originale)**
+
+### **1.6 get_chat_details**
+- **Permesso ID**: TBD
+- **Nome**: `get_chat_details`
+- **Ruolo**: Swapper
+- **Descrizione**: Recupera i dettagli completi di una chat e la lista dei membri (inclusi `fotoprofilo`, `ruolo`, `dataAdesione`).
+- **Tipo**: READ
+- **API**: GET: `api/swapper/api_get_chat_details.php?idChat=ID`
+- **Autorizzazione**: l'utente deve essere partecipante della chat
+- **Input**: `idChat` (query string)
+- **Output**: `chat` (oggetto con `idChat`, `nomeChat`, `tipoChat`, `stato`, `numPartecipanti`, `descrizione`, `dataCreazione`, `creator`, `youAreCreator`, `totalMessages`) + `membri[]` (array di oggetti: `username`, `Nome`, `Cognome`, `fotoprofilo`, `localita`, `nomeRuolo`, `isCreator`, `dataAdesione`)
+
+### **1.7 get_chat_messages**
+- **Permesso ID**: TBD
+- **Nome**: `get_chat_messages`
+- **Ruolo**: Swapper
+- **Descrizione**: Recupera tutti i messaggi di una chat (ordinati per data) con flag `isMine` per l'UI.
+- **Tipo**: READ
+- **API**: GET: `api/swapper/api_get_chat_messages.php?idChat=ID`
+- **Autorizzazione**: l'utente deve partecipare alla chat
+- **Input**: `idChat` (query string)
+- **Output**: `messages[]` (oggetti con `idMessaggio`, `idChat`, `user`, `contenuto`, `dataInvio`, `isMine`), `totalMessages`
+
+### **1.8 delete_chat**
+- **Permesso ID**: TBD
+- **Nome**: `delete_chat`
+- **Ruolo**: Swapper
+- **Descrizione**: Elimina completamente una chat; può essere eseguita solo dal creatore della chat.
+- **Tipo**: DELETE/POST
+- **API**: POST: `api/swapper/api_delete_chat.php` (body JSON `{ idChat }`)
+- **Autorizzazione**: solo il creatore (verifica tramite `ChatOwner`)
+- **Input**: `idChat` (JSON body)
+- **Output**: `{ success, message }` o errore
+
+### **1.9 update_chat**
+- **Permesso ID**: TBD
+- **Nome**: `update_chat`
+- **Ruolo**: Swapper
+- **Descrizione**: Aggiorna metadati di una chat (es. `descrizione`).
+- **Tipo**: UPDATE
+- **API**: POST: `api/swapper/api_update_chat.php` (body JSON `{ idChat, descrizione }`)
+- **Autorizzazione**: solo il creatore può modificare la descrizione
+- **Input**: `idChat`, `descrizione` (JSON body)
+- **Output**: `{ success, messaggio }`
+
+### **1.10 update_message**
+- **Permesso ID**: TBD
+- **Nome**: `update_message`
+- **Ruolo**: Swapper
+- **Descrizione**: Modifica il contenuto di un messaggio; può farlo solo l'autore del messaggio.
+- **Tipo**: UPDATE
+- **API**: POST: `api/swapper/api_update_message.php` (body JSON `{ idMessaggio, contenuto }`)
+- **Autorizzazione**: solo l'autore del messaggio
+- **Input**: `idMessaggio`, `contenuto`
+- **Output**: `{ success, message }`
+
 ---
 
 ## 2. SOCIAL (5 rotte)
@@ -300,6 +361,18 @@ Utente → mockup_manager.php?azione=PERMESSO → Vista → API → VIEW SQL →
 - **Output**: Dettagli abbonamento o messaggio "nessun abbonamento"
 
 ---
+
+### **2.6 get_swappers_list**
+- **Permesso ID**: TBD
+- **Nome**: `get_swappers_list`
+- **Ruolo**: Swapper
+- **Descrizione**: Recupera la lista degli utenti con ruolo `Swapper` (esclude l'utente corrente). Utile per selezionare destinatari nelle segnalazioni o filtri.
+- **Tipo**: READ
+- **API**: GET: `api/swapper/api_get_swappers_list.php`
+- **Autorizzazione**: richiede autenticazione JWT
+- **Input**: nessuno (usa JWT per escludere l'utente corrente)
+- **Output**: `{ success, utenti[], totalUtenti }` dove `utenti[]` contiene `username`, `Nome`, `Cognome`, `fotoprofilo`, `localita`
+
 
 ## 3. PRODOTTI E SCAMBI (5 rotte)
 

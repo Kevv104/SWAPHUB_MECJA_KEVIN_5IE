@@ -47,22 +47,18 @@ function normalizzaCondizioni($value) {
     return 'Buono';
 }
 
-// --- CONFIGURAZIONE AMBIENTE (BYPASS POSTMAN) ---
-$isDevelopment = true;
+// --- CONFIGURAZIONE AMBIENTE ---
+if (session_status() === PHP_SESSION_NONE) {
+    session_start(['cookie_path' => '/login/']);
+}
 
-if ($isDevelopment) {
-    $username = 'gianno';
-} else {
-    if (session_status() === PHP_SESSION_NONE) {
-        session_start(['cookie_path' => '/login/']);
-    }
+// Bypass per development/Postman
+$isLocalhost = in_array($_SERVER['REMOTE_ADDR'], ['127.0.0.1', '::1']) || 
+               (isset($_SERVER['HTTP_HOST']) && strpos($_SERVER['HTTP_HOST'], 'localhost') !== false);
 
-    if (!isset($_SESSION['jwt'])) {
-        http_response_code(401);
-        echo json_encode(['success' => false, 'message' => 'Non autorizzato']);
-        exit;
-    }
+$username = null;
 
+if (isset($_SESSION['jwt'])) {
     try {
         $decoded = JWT::decode($_SESSION['jwt'], new Key(JWT_SECRET, JWT_ALGO));
         $username = $decoded->sub;
@@ -71,6 +67,12 @@ if ($isDevelopment) {
         echo json_encode(['success' => false, 'message' => 'Token non valido']);
         exit;
     }
+} elseif ($isLocalhost) {
+    $username = 'gianno';
+} else {
+    http_response_code(401);
+    echo json_encode(['success' => false, 'message' => 'Non autorizzato']);
+    exit;
 }
 
 // POST: Carica un nuovo prodotto

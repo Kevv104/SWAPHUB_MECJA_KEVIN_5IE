@@ -10,22 +10,18 @@ use Firebase\JWT\Key;
 
 header('Content-Type: application/json');
 
-// --- CONFIGURAZIONE AMBIENTE (BYPASS POSTMAN) ---
-$isDevelopment = true;
+// --- CONFIGURAZIONE AMBIENTE ---
+if (session_status() === PHP_SESSION_NONE) {
+    session_start(['cookie_path' => '/login/']);
+}
 
-if ($isDevelopment) {
-    $username = 'gianno';
-} else {
-    if (session_status() === PHP_SESSION_NONE) {
-        session_start(['cookie_path' => '/login/']);
-    }
+// Bypass per development/Postman: se non c'è JWT e siamo in localhost, usa test user
+$isLocalhost = in_array($_SERVER['REMOTE_ADDR'], ['127.0.0.1', '::1']) || 
+               (isset($_SERVER['HTTP_HOST']) && strpos($_SERVER['HTTP_HOST'], 'localhost') !== false);
 
-    if (!isset($_SESSION['jwt'])) {
-        http_response_code(401);
-        echo json_encode(['success' => false, 'message' => 'Non autorizzato: JWT non trovato']);
-        exit;
-    }
+$username = null;
 
+if (isset($_SESSION['jwt'])) {
     try {
         $decoded = JWT::decode($_SESSION['jwt'], new Key(JWT_SECRET, JWT_ALGO));
         $username = $decoded->sub;
@@ -34,6 +30,13 @@ if ($isDevelopment) {
         echo json_encode(['success' => false, 'message' => 'Token non valido: ' . $e->getMessage()]);
         exit;
     }
+} elseif ($isLocalhost) {
+    // Bypass solo per localhost/development
+    $username = 'gianno';
+} else {
+    http_response_code(401);
+    echo json_encode(['success' => false, 'message' => 'Non autorizzato: JWT non trovato']);
+    exit;
 }
 
 // GET: Recupera tutti i prodotti dell'utente
@@ -41,20 +44,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     try {
         $query = "
             SELECT 
-                idProdotto,
-                Titolo,
-                Descrizione,
-                Disponibilità,
-                Condizioni,
-                dataPubblicazione,
-                img,
-                NomeCategoria,
-                username,
-                nomeUtente,
-                cognomeUtente
-            FROM vista_prodotti
-            WHERE username = ?
-            ORDER BY dataPubblicazione DESC
+                p.idProdotto,
+                p.Titolo,
+                p.Descrizione,
+                p.Disponibilità,
+                p.Condizioni,
+                p.dataPubblicazione,
+                p.img,
+                p.NomeCategoria,
+                p.User AS username,
+                u.Nome AS nomeUtente,
+                u.Cognome AS cognomeUtente
+            FROM Prodotto p
+            LEFT JOIN utenti u ON p.User = u.username
+            WHERE p.User = ?
+            ORDER BY p.dataPubblicazione DESC
         ";
         
         $stmt = $connessione->prepare($query);
