@@ -9,14 +9,14 @@
   require_once 'jwt.php';
 
   $statoq = $connessione->prepare("
-    SELECT ur.idRuolo, u.bgcolor 
+    SELECT ur.idRuolo, u.bgcolor, u.fotoprofilo
     FROM utenti u 
     INNER JOIN UtenteRuolo ur ON u.username = ur.username 
     WHERE u.username = ?
   ");
   $statoq->bind_param("s",$_SESSION['name']);
   $statoq->execute();
-  $statoq->bind_result($roleID,$bgcolor);
+  $statoq->bind_result($roleID,$bgcolor,$fotoprofilo);
   $statoq->fetch();
   $statoq->close();
 
@@ -37,7 +37,18 @@
         <div class="row justify-content-center">
             <div class="col-md-10 bg-white p-4 rounded shadow-sm" style="border-top: 5px solid <?php echo $bgcolor; ?>;">
                 
-                <h1 class="mb-4 fw-bold text-center">Benvenuto, <?php echo htmlspecialchars($_SESSION["name"]); ?>!</h1>
+                <div class="text-center mb-4">
+                    <?php
+                        $fotoprofilo = $fotoprofilo ?? 'uploads/profile/default.png';
+                        $fotoPath = (strpos($fotoprofilo, 'uploads') === 0) ? $fotoprofilo : 'uploads/profile/default.png';
+                    ?>
+                    <img src="<?php echo htmlspecialchars($fotoPath); ?>"
+                         alt="<?php echo htmlspecialchars($_SESSION['name']); ?>"
+                         class="rounded-circle mb-3"
+                         style="width: 120px; height: 120px; object-fit: cover; border: 3px solid <?php echo $bgcolor; ?>; box-shadow: 0 4px 8px rgba(0,0,0,0.1);"
+                         onerror="this.src='uploads/profile/default.png'">
+                    <h1 class="fw-bold text-center">Benvenuto, <?php echo htmlspecialchars($_SESSION["name"]); ?>!</h1>
+                </div>
 
                 <div class="mt-4">
                     <div class="d-flex align-items-center mb-3">

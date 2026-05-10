@@ -96,8 +96,20 @@ if($_SERVER["REQUEST_METHOD"] === "POST")
        }
 
        $ext = strtolower(pathinfo($_FILES['fotoprofilo']['name'], PATHINFO_EXTENSION));
-       $filename = uniqid("profile_") . '.' . $ext;
+       if ($ext === '') {
+           $ext = 'jpg';
+       }
+
+       // Un solo file per utente: se ricarica la foto, sovrascrive la precedente.
+       $filename = 'profile_' . preg_replace('/[^a-zA-Z0-9_-]/', '_', $username) . '.' . $ext;
        $destination = $upload_dir . '/' . $filename;
+
+       // Pulisce eventuali vecchi file della stessa foto profilo, così non si accumulano copie.
+       foreach (glob($upload_dir . '/profile_' . preg_replace('/[^a-zA-Z0-9_-]/', '_', $username) . '.*') as $oldProfileFile) {
+           if (is_file($oldProfileFile) && basename($oldProfileFile) !== basename($destination)) {
+               @unlink($oldProfileFile);
+           }
+       }
 
        // Tenta il caricamento
        if(move_uploaded_file($_FILES['fotoprofilo']['tmp_name'], $destination)) {

@@ -4,6 +4,9 @@ LOGIN_DATABASE/connectdb.php
 LOGIN_DATABASE/vendor
 cloudflared-linux-amd64.deb
 LOGIN_DATABASE/start_mqtt.sh
+LOGIN_DATABASE/uploads/profile/*
+!LOGIN_DATABASE/uploads/profile/.gitkeep
+!LOGIN_DATABASE/uploads/profile/default.png
 
 .env
 *.log

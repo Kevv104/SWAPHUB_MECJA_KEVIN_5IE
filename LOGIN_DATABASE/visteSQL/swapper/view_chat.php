@@ -186,6 +186,106 @@
       border-left: 4px solid #667eea;
     }
 
+    .chat-title-button {
+      border: 0;
+      background: transparent;
+      padding: 0;
+      width: 100%;
+      display: block;
+      cursor: default;
+      color: inherit;
+      text-align: left;
+    }
+
+    .chat-title-main {
+      transition: color 0.2s ease;
+    }
+
+    .chat-header-avatar {
+      width: 46px;
+      height: 46px;
+      border-radius: 50%;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      background: linear-gradient(135deg, #667eea, #4c51bf);
+      color: #fff;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      box-shadow: 0 8px 20px rgba(102, 126, 234, 0.25);
+    }
+
+    .chat-header-avatar i {
+      font-size: 1.2rem;
+    }
+
+    .chat-info-btn {
+      white-space: nowrap;
+      min-width: 110px;
+      box-shadow: 0 8px 18px rgba(13, 110, 253, 0.18);
+    }
+
+    .chat-details-divider {
+      border-top: 1px solid #dee2e6;
+      opacity: 1;
+    }
+
+    .chat-details-section {
+      padding-top: 1rem;
+      margin-top: 1rem;
+    }
+
+    .chat-details-offcanvas {
+      width: min(460px, 100vw);
+    }
+
+    .detail-meta-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 0.75rem;
+    }
+
+    .detail-meta-box {
+      border: 1px solid #e9ecef;
+      border-radius: 0.9rem;
+      padding: 0.75rem;
+      background: #fafbff;
+    }
+
+    .detail-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      padding: 0.35rem 0.7rem;
+      border-radius: 999px;
+      font-size: 0.78rem;
+      background: #f1f3ff;
+      color: #4c51bf;
+      margin: 0 0.35rem 0.35rem 0;
+    }
+
+    .detail-member-card {
+      display: flex;
+      gap: 0.75rem;
+      align-items: flex-start;
+      padding: 0.85rem;
+      border: 1px solid #e9ecef;
+      border-radius: 1rem;
+      background: #fff;
+      margin-bottom: 0.75rem;
+    }
+
+    .detail-member-avatar {
+      width: 52px;
+      height: 52px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 2px solid #e9ecef;
+      flex-shrink: 0;
+      background: #f8f9fa;
+    }
+
     .badge-tipo {
       font-size: 0.75rem;
     }
@@ -236,6 +336,18 @@
 
       .mobile-back-btn {
         display: inline-flex !important;
+      }
+
+      .chat-details-offcanvas {
+        width: 100vw;
+      }
+
+      .detail-meta-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .chat-info-btn {
+        min-width: 96px;
       }
     }
   </style>
@@ -288,11 +400,24 @@
             <button type="button" class="btn btn-outline-secondary btn-sm mobile-back-btn mb-2" style="display: none;" onclick="closeMobileChat()">
               <i class="bi bi-arrow-left me-1"></i>Torna alle chat
             </button>
-            <div class="d-flex justify-content-between align-items-center mb-1">
-              <h5 class="mb-0" id="active-chat-name">-</h5>
-              <button type="button" class="btn btn-outline-danger btn-sm" id="delete-chat-btn" style="display: none;" onclick="deleteActiveChat()">
-                <i class="bi bi-trash3 me-1"></i>Elimina chat
-              </button>
+            <div class="d-flex justify-content-between align-items-start gap-3 mb-1">
+              <div class="d-flex align-items-center gap-3 flex-grow-1">
+                <div class="chat-header-avatar" id="chat-header-avatar" aria-hidden="true">
+                  <i class="bi bi-people-fill"></i>
+                </div>
+                <div class="chat-title-button" aria-label="Titolo chat">
+                  <h5 class="mb-0 chat-title-main" id="active-chat-name">-</h5>
+                  <small class="text-muted d-block mt-1" id="active-chat-subtitle">Info disponibili dal pulsante dedicato</small>
+                </div>
+              </div>
+              <div class="d-flex align-items-center gap-2 flex-shrink-0">
+                <button type="button" class="btn btn-primary btn-sm chat-info-btn" onclick="openChatDetails()">
+                  <i class="bi bi-info-circle me-1"></i>Info chat
+                </button>
+                <button type="button" class="btn btn-outline-danger btn-sm" id="delete-chat-btn" style="display: none;" onclick="deleteActiveChat()">
+                  <i class="bi bi-trash3 me-1"></i>Elimina
+                </button>
+              </div>
             </div>
             <small class="text-muted" id="active-chat-desc">-</small>
           </div>
@@ -321,6 +446,82 @@
     </div>
   </div>
 
+  <div class="offcanvas offcanvas-end chat-details-offcanvas" tabindex="-1" id="chatDetailsOffcanvas" aria-labelledby="chatDetailsOffcanvasLabel">
+    <div class="offcanvas-header border-bottom">
+      <div>
+        <h5 class="offcanvas-title mb-1" id="chatDetailsOffcanvasLabel">Dettagli chat</h5>
+        <small class="text-muted" id="chat-details-subtitle">Informazioni e membri della chat</small>
+      </div>
+      <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+    </div>
+    <div class="offcanvas-body" id="chat-details-body">
+      <div id="chat-details-loading" class="text-center py-5">
+        <div class="spinner-border text-primary" role="status">
+          <span class="visually-hidden">Caricamento...</span>
+        </div>
+        <p class="mt-3 text-muted mb-0">Caricamento dettagli chat...</p>
+      </div>
+
+      <div id="chat-details-error" class="alert alert-danger" style="display:none;"></div>
+
+      <div id="chat-details-content" style="display:none;">
+        <div class="mb-3">
+          <div id="chat-details-pills" class="mb-2"></div>
+          <h4 class="fw-bold mb-1" id="chat-details-name">-</h4>
+          <div class="text-muted small" id="chat-details-creator">-</div>
+        </div>
+
+        <hr class="chat-details-divider my-3">
+
+        <div class="detail-meta-grid mb-3">
+          <div class="detail-meta-box">
+            <div class="text-muted small">Tipo</div>
+            <div class="fw-semibold" id="chat-details-type">-</div>
+          </div>
+          <div class="detail-meta-box">
+            <div class="text-muted small">Stato</div>
+            <div class="fw-semibold" id="chat-details-status">-</div>
+          </div>
+          <div class="detail-meta-box">
+            <div class="text-muted small">Partecipanti</div>
+            <div class="fw-semibold" id="chat-details-participants">-</div>
+          </div>
+          <div class="detail-meta-box">
+            <div class="text-muted small">Messaggi</div>
+            <div class="fw-semibold" id="chat-details-messages">-</div>
+          </div>
+        </div>
+
+        <div class="chat-details-section mb-3">
+          <div class="d-flex justify-content-between align-items-start mb-1">
+            <div class="text-muted small">Descrizione</div>
+            <div id="chat-description-actions" style="display: none;">
+              <button id="btn-edit-desc" class="btn btn-sm btn-outline-primary">Modifica</button>
+            </div>
+          </div>
+
+          <div id="chat-description-view">
+            <div class="p-3 bg-light rounded-3" id="chat-details-description">-</div>
+          </div>
+
+          <div id="chat-description-edit" style="display: none;">
+            <textarea id="chat-description-textarea" class="form-control mb-2" rows="3"></textarea>
+            <div class="d-flex gap-2">
+              <button id="btn-save-desc" class="btn btn-primary btn-sm">Salva</button>
+              <button id="btn-cancel-desc" class="btn btn-outline-secondary btn-sm">Annulla</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="chat-details-section mb-2 d-flex justify-content-between align-items-center">
+          <h6 class="mb-0 fw-bold">Membri</h6>
+          <small class="text-muted" id="chat-details-members-count">-</small>
+        </div>
+        <div id="chat-members-list"></div>
+      </div>
+    </div>
+  </div>
+
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
   
   <script>
@@ -329,6 +530,51 @@
      */
     let activeChat = null;
     let editingMessageId = null;
+
+    function escapeHtml(value) {
+      return String(value ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
+    function buildProfileImagePath(fotoprofilo) {
+      if (!fotoprofilo) {
+        return '/login/uploads/profile/default.png';
+      }
+
+      if (fotoprofilo.startsWith('http://') || fotoprofilo.startsWith('https://') || fotoprofilo.startsWith('/')) {
+        return fotoprofilo;
+      }
+
+      return `/login/${fotoprofilo}`;
+    }
+
+    function getChatInitials(chatName) {
+      const cleaned = String(chatName || '').trim();
+      if (!cleaned) return 'CH';
+
+      const parts = cleaned.split(/\s+/).filter(Boolean);
+      const initials = parts.slice(0, 2).map(part => part.charAt(0)).join('').toUpperCase();
+      return initials || cleaned.charAt(0).toUpperCase();
+    }
+
+    function formatLongDate(dateString) {
+      if (!dateString) return '-';
+
+      const date = parseServerDate(dateString);
+      if (!date || Number.isNaN(date.getTime())) return '-';
+
+      return date.toLocaleString('it-IT', {
+        day: '2-digit',
+        month: 'long',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+    }
 
     /**
      * PARSE DATE DA MYSQL (UTC -> locale browser)
@@ -468,7 +714,8 @@
       
       document.getElementById('active-chat-name').textContent = chat.nomeChat;
       document.getElementById('active-chat-desc').textContent = 
-        `${chat.numPartecipanti} partecipanti • ${chat.totMessaggi} messaggi`;
+        `${chat.numPartecipanti} partecipanti • ${chat.totMessaggi} messaggi • clicca sul nome per i dettagli`;
+      document.getElementById('chat-header-avatar').textContent = getChatInitials(chat.nomeChat);
 
       const deleteBtn = document.getElementById('delete-chat-btn');
       deleteBtn.style.display = chat.isCreator ? 'inline-flex' : 'none';
@@ -476,6 +723,160 @@
       // Carica messaggi
       loadMessages();
     }
+
+    function openChatDetails() {
+      if (!activeChat) return;
+
+      const offcanvasElement = document.getElementById('chatDetailsOffcanvas');
+      const offcanvas = bootstrap.Offcanvas.getOrCreateInstance(offcanvasElement);
+
+      document.getElementById('chat-details-loading').style.display = 'block';
+      document.getElementById('chat-details-error').style.display = 'none';
+      document.getElementById('chat-details-content').style.display = 'none';
+      offcanvas.show();
+
+      fetch(`/login/api/swapper/api_get_chat_details.php?idChat=${activeChat.idChat}`, {
+        credentials: 'include'
+      })
+        .then(res => res.json())
+        .then(data => {
+          document.getElementById('chat-details-loading').style.display = 'none';
+
+          if (!data.success) {
+            const errorBox = document.getElementById('chat-details-error');
+            errorBox.textContent = data.error || 'Impossibile caricare i dettagli della chat';
+            errorBox.style.display = 'block';
+            return;
+          }
+
+          renderChatDetails(data);
+        })
+        .catch(err => {
+          console.error(err);
+          document.getElementById('chat-details-loading').style.display = 'none';
+          const errorBox = document.getElementById('chat-details-error');
+          errorBox.textContent = 'Errore di caricamento dei dettagli chat';
+          errorBox.style.display = 'block';
+        });
+    }
+
+    function renderChatDetails(data) {
+      const chat = data.chat;
+      const membri = data.membri || [];
+
+      document.getElementById('chat-details-name').textContent = chat.nomeChat || '-';
+      document.getElementById('chat-details-creator').textContent = chat.creator
+        ? `Creatore: @${chat.creator}`
+        : 'Creatore non registrato';
+      document.getElementById('chat-details-type').textContent = chat.tipoChat || '-';
+      document.getElementById('chat-details-status').textContent = chat.stato || '-';
+      document.getElementById('chat-details-participants').textContent = `${chat.numPartecipanti ?? membri.length} persone`;
+      document.getElementById('chat-details-messages').textContent = `${chat.totalMessages ?? 0} messaggi`;
+      document.getElementById('chat-details-description').textContent = chat.descrizione || 'Nessuna descrizione disponibile.';
+
+      // Keep last loaded chat for edit actions
+      window.__lastChatDetails = chat;
+
+      // Show edit actions if the current user is the creator
+      if (chat.youAreCreator) {
+        document.getElementById('chat-description-actions').style.display = 'block';
+      } else {
+        document.getElementById('chat-description-actions').style.display = 'none';
+      }
+      document.getElementById('chat-details-members-count').textContent = `${membri.length} membri`;
+
+      const pills = document.getElementById('chat-details-pills');
+      pills.innerHTML = `
+        <span class="detail-pill"><i class="bi bi-people"></i> ${escapeHtml(chat.tipoChat || 'chat')}</span>
+        <span class="detail-pill"><i class="bi bi-chat-dots"></i> ${chat.totalMessages ?? 0} messaggi</span>
+        <span class="detail-pill"><i class="bi bi-calendar3"></i> ${escapeHtml(formatLongDate(chat.dataCreazione))}</span>
+      `;
+
+      const membersList = document.getElementById('chat-members-list');
+      if (membri.length === 0) {
+        membersList.innerHTML = '<div class="text-muted small">Nessun membro trovato.</div>';
+      } else {
+        membersList.innerHTML = membri.map(membro => `
+          <div class="detail-member-card">
+            <img src="${buildProfileImagePath(membro.fotoprofilo)}"
+                 alt="${escapeHtml(membro.Nome || membro.username)}"
+                 class="detail-member-avatar"
+                 onerror="this.src='/login/uploads/profile/default.png'">
+            <div class="flex-grow-1">
+              <div class="d-flex align-items-start justify-content-between gap-2">
+                <div>
+                  <div class="fw-bold">${escapeHtml(membro.Nome || '')} ${escapeHtml(membro.Cognome || '')}</div>
+                  <div class="text-muted small">@${escapeHtml(membro.username || '')}</div>
+                </div>
+                ${membro.isCreator ? '<span class="badge bg-primary">Creatore</span>' : ''}
+              </div>
+              <div class="text-muted small mt-1">
+                ${membro.nomeRuolo ? `<span class="me-2"><i class="bi bi-person-badge"></i> ${escapeHtml(membro.nomeRuolo)}</span>` : ''}
+                ${membro.localita ? `<span><i class="bi bi-geo-alt"></i> ${escapeHtml(membro.localita)}</span>` : ''}
+              </div>
+            </div>
+          </div>
+        `).join('');
+      }
+
+      document.getElementById('chat-details-content').style.display = 'block';
+    }
+
+    // ---- Edit description handlers ----
+    function enableDescriptionEdit() {
+      const chat = window.__lastChatDetails || {};
+      document.getElementById('chat-description-view').style.display = 'none';
+      document.getElementById('chat-description-edit').style.display = 'block';
+      document.getElementById('chat-description-textarea').value = chat.descrizione || '';
+    }
+
+    function cancelDescriptionEdit() {
+      document.getElementById('chat-description-edit').style.display = 'none';
+      document.getElementById('chat-description-view').style.display = 'block';
+    }
+
+    function saveChatDescription() {
+      const chat = window.__lastChatDetails || {};
+      const newDesc = document.getElementById('chat-description-textarea').value;
+      const payload = { idChat: chat.idChat, descrizione: newDesc };
+
+      const btn = document.getElementById('btn-save-desc');
+      btn.disabled = true;
+      btn.textContent = 'Salvataggio...';
+
+      fetch('/login/api/swapper/api_update_chat.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify(payload)
+      })
+        .then(res => res.json())
+        .then(data => {
+          btn.disabled = false;
+          btn.textContent = 'Salva';
+          if (data.success) {
+            // aggiorna UI
+            window.__lastChatDetails.descrizione = newDesc;
+            document.getElementById('chat-details-description').textContent = newDesc || 'Nessuna descrizione disponibile.';
+            cancelDescriptionEdit();
+          } else {
+            alert('Errore: ' + (data.error || 'Impossibile aggiornare la descrizione'));
+          }
+        })
+        .catch(err => {
+          console.error(err);
+          btn.disabled = false;
+          btn.textContent = 'Salva';
+          alert('Errore di rete durante il salvataggio');
+        });
+    }
+
+    // Wire buttons (delegated safe wiring in case elements are re-rendered)
+    document.addEventListener('click', function(e) {
+      if (e.target && e.target.id === 'btn-edit-desc') enableDescriptionEdit();
+      if (e.target && e.target.id === 'btn-cancel-desc') cancelDescriptionEdit();
+      if (e.target && e.target.id === 'btn-save-desc') saveChatDescription();
+    });
 
     function setInputEnabled(enabled) {
       const input = document.getElementById('message-input');
