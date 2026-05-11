@@ -8,32 +8,34 @@ use Firebase\JWT\JWT;
 use Firebase\JWT\Key;
 
 /**
- * --- CONFIGURAZIONE AMBIENTE (BYPASS POSTMAN) ---
+ * --- CONFIGURAZIONE AMBIENTE (BYPASS POSTMAN/LOCALHOST) ---
  */
-$isDevelopment = true; 
+if (session_status() === PHP_SESSION_NONE) {
+    session_start(['cookie_path' => '/login/']);
+}
 
-if ($isDevelopment) {
-    // In modalità test, carichiamo le chat dell'utente 'gianno'
-    $currentUser = 'gianno'; 
-} else {
-    if (session_status() === PHP_SESSION_NONE) {
-        session_start(['cookie_path' => '/login/']);
-    }
+// Bypass per development/Postman: se non c'è JWT e siamo in localhost, usa test user
+$isLocalhost = in_array($_SERVER['REMOTE_ADDR'], ['127.0.0.1', '::1']) || 
+               (isset($_SERVER['HTTP_HOST']) && strpos($_SERVER['HTTP_HOST'], 'localhost') !== false);
 
-    if(!isset($_SESSION['jwt'])) {
-        http_response_code(401);
-        echo json_encode(["success" => false, "error" => "Non autorizzato"]); 
-        exit;
-    }
+$currentUser = null;
 
+if (isset($_SESSION['jwt'])) {
     try {
         $decoded = JWT::decode($_SESSION['jwt'], new Key(JWT_SECRET, JWT_ALGO));
         $currentUser = $decoded->sub;
     } catch (Exception $e) {
         http_response_code(401);
-        echo json_encode(["success" => false, "error" => "Token non valido"]);
+        echo json_encode(["success" => false, "error" => "Token non valido: " . $e->getMessage()]);
         exit;
     }
+} elseif ($isLocalhost) {
+    // Bypass solo per localhost/development (Postman)
+    $currentUser = 'gianno';
+} else {
+    http_response_code(401);
+    echo json_encode(["success" => false, "error" => "Non autorizzato: JWT non trovato"]);
+    exit;
 }
 
 try {
