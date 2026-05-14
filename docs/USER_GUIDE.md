@@ -248,7 +248,7 @@ Perche' sessione + JWT insieme:
 
 - La sessione mantiene stato server-side e semplifica la navigazione dashboard.
 - Il JWT standardizza l'identita' utente per API e controlli autorizzativi.
-- La combinazione riduce mismatch tra vista PHP e chiamate API AJAX.
+- La combinazione tiene allineate vista PHP e chiamate API AJAX.
 
 Nota sui codici permesso:
 
