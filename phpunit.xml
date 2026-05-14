@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<phpunit bootstrap="LOGIN_DATABASE/permessi_helper.php" colors="true">
+    <testsuites>
+        <testsuite name="SwapHub Tests">
+            <directory>tests</directory>
+        </testsuite>
+    </testsuites>
+</phpunit>

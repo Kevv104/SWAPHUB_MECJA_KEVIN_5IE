@@ -3,27 +3,11 @@
 header('Content-type: application/json');
 require_once __DIR__ . '/vendor/autoload.php';
 require_once 'jwt.php'; //serve per la creazione e firma del jwt
+require_once __DIR__ . '/permessi_helper.php';
 use Firebase\JWT\JWT;
 use Firebase\JWT\Key;
 
 session_start();
-
-function normalizzaPermessoApi(string $permesso): ?string
-{
-  $mappa = [
-    'upload_product' => 'manage_products',
-    'accept_friend_request' => 'manage_friend_request',
-    'view_chat' => 'manage_chat',
-    'send_message' => null,
-    'reject_friend_request' => null,
-  ];
-
-  if (array_key_exists($permesso, $mappa)) {
-    return $mappa[$permesso];
-  }
-
-  return $permesso;
-}
 
 if(!isset($_SESSION['jwt'])) //se il token di sessione non è settato, non sei autorizzato
 {
@@ -39,7 +23,7 @@ try
   echo json_encode([
     "utente" => $decoded->sub,
     "rilasciato_da" => $decoded->iss,
-    "permessi" => array_values(array_filter(array_map('normalizzaPermessoApi', $decoded->permessi ?? []))),
+    "permessi" => array_values(array_filter(array_map('normalizzaPermesso', $decoded->permessi ?? []))),
      "scadenza_ts" => $decoded->exp, //attributo che fornisce il timestamp della scadenza
     "scadenza" => date('H:i:s',$decoded->exp),
     "token_grezzo" => $_SESSION['jwt'] //attributo per visualizzare il jwt in modo grezzo

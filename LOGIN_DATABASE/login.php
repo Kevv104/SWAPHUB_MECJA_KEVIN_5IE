@@ -5,26 +5,10 @@ require_once __DIR__ . '/vendor/autoload.php';
 require_once 'connectdb.php'; //config db
 require_once 'config.php'; //importazione del pepper contenuto nel file config.php
 require_once 'jwt.php';
+require_once __DIR__ . '/permessi_helper.php';
 
 use Firebase\JWT\JWT;
 use Firebase\JWT\Key;
-
-function normalizzaPermesso(string $permesso): ?string
-{
-    $mappa = [
-        'upload_product' => 'manage_products',
-        'accept_friend_request' => 'manage_friend_request',
-        'view_chat' => 'manage_chat',
-        'send_message' => null,
-        'reject_friend_request' => null,
-    ];
-
-    if (array_key_exists($permesso, $mappa)) {
-        return $mappa[$permesso];
-    }
-
-    return $permesso;
-}
 
 
 
