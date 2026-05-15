@@ -1,4 +1,5 @@
 <?php
+# API per ottenere le richieste di amicizia in sospeso per l'utente corrente
 header('Content-Type: application/json');
 require_once __DIR__ . '/../../vendor/autoload.php';
 require_once '../../jwt.php';
