@@ -5,6 +5,33 @@ Guida operativa app SWAPHUB.
 Utente test Swapper: `gianno`  
 Password: `g67`
 
+## Come accedere all'app
+
+Se stai lavorando in Codespaces o in un ambiente simile, prima di aprire l'app devi:
+
+1. esporre la porta `80` verso il browser o renderla pubblica, se richiesto dall'ambiente;
+2. avviare i servizi `apache2` e `mariadb`;
+3. aprire nel browser l'URL dell'app e aggiungere `/login` alla fine del percorso.
+
+Esempio:
+
+```text
+http://localhost/login
+```
+
+Se la tua istanza usa un URL diverso da `localhost`, mantieni lo stesso suffisso `/login` dopo il dominio o l'indirizzo fornito dal workspace.
+
+### Se apri il progetto come zip in VS Code
+
+Se scarichi lo ZIP del progetto e lo apri in Visual Studio Code, il flusso e' lo stesso:
+
+1. apri la cartella del progetto in VS Code;
+2. avvii `apache2` e `mariadb` sul sistema dove gira l'app;
+3. esponi la porta `80` se stai usando un ambiente remoto;
+4. apri nel browser `http://localhost/login` oppure `http://<host>/login` se il progetto gira su un indirizzo diverso.
+
+Se il progetto viene eseguito solo in locale sulla macchina dell'utente, non serve Codespaces: basta che Apache e MariaDB siano attivi e che il browser punti al percorso `/login`.
+
 ## Indice
 
 - [Panoramica rapida](#panoramica-rapida)
@@ -101,7 +128,7 @@ Come usarla:
 
 1. Apri dashboard in [visualizzaUtente.php](../LOGIN_DATABASE/visualizzaUtente.php).
 2. Seleziona il caso d'uso `create_chat`.
-3. La vista carica gli utenti disponibili.
+3. La vista carica gli utenti disponibili per te.
 4. Inserisci nome/chat, partecipanti e invia.
 5. L'API crea chat e partecipazioni; la nuova chat è poi visibile in `view_chat`.
 
@@ -131,7 +158,7 @@ Percorso reale:
 Come usarla:
 
 1. Apri il caso `send_friend_request`.
-2. Seleziona uno user dalla lista proposta.
+2. Seleziona un utente dalla lista proposta.
 3. Invia la richiesta.
 
 ### manage_friend_request
@@ -238,7 +265,7 @@ File chiave:
 
 Flusso:
 
-1. Registrazione (`register.php`): crea l'utente e associa il ruolo applicativo.
+1. Registrazione (`register.php`): crea il tuo account e associa il ruolo applicativo.
 2. Login (`login.php`): verifica credenziali, carica ruoli/permessi, genera JWT.
 3. Sessione PHP: salva profilo utente, ruoli, permessi, token e metadati UI.
 4. Esposizione permessi (`api_permessi.php`): il frontend legge i permessi effettivi.
